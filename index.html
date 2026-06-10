@@ -238,9 +238,6 @@ const REFRESH_MS   = 15 * 60 * 1000;  // 15 phút
 const PRICE_MS     = 60 * 1000;        // giá refresh mỗi 1 phút
 const MAX_PER_TOPIC = 6;               // tin tối đa / chủ đề
 
-// RSS → JSON qua rss2json.com (miễn phí, không cần key cho public feeds)
-const RSS2JSON = 'https://api.rss2json.com/v1/api.json?rss_url=';
-
 // Danh sách feed RSS (topic: institutions/gold_silver/bitcoin/macro/geopolitics/vietnam/stocks)
 const FEEDS = [
   {name:'CoinDesk',        url:'https://www.coindesk.com/arc/outboundfeeds/rss/',    topic:'bitcoin'},
@@ -366,30 +363,74 @@ async function translateBatch(items) {
 }
 
 // ============================================================
-// GIÁ REALTIME — CoinGecko (miễn phí, không cần key)
+// GIÁ REALTIME — Binance (BTC/ETH) + fallback CoinGecko
+// Vàng/Bạc: dùng open.er-api.com proxy qua XAU/USD
 // ============================================================
 const PRICE_IDS = {
-  'bitcoin': {sym:'BTC/USD', name:'Bitcoin',     unit:'$',   decs:0},
-  'gold':    {sym:'XAU/USD', name:'Vàng (XAU)',  unit:'$',   decs:0},
-  'silver':  {sym:'XAG/USD', name:'Bạc (XAG)',   unit:'$',   decs:2},
+  'bitcoin': {sym:'BTC/USD', name:'Bitcoin',    unit:'$', decs:0,  binance:'BTCUSDT'},
+  'gold':    {sym:'XAU/USD', name:'Vàng (XAU)', unit:'$', decs:0,  binance:null},
+  'silver':  {sym:'XAG/USD', name:'Bạc (XAG)',  unit:'$', decs:2,  binance:null},
 };
 
 let _lastPrices = {};
 
-async function fetchPrices() {
+// Lấy BTC/ETH từ Binance (không cần key, không CORS)
+async function fetchBinancePrice(symbol) {
   try {
-    const ids = Object.keys(PRICE_IDS).join(',');
     const r = await fetch(
-      `https://api.coingecko.com/api/v3/simple/price?ids=${ids}&vs_currencies=usd&include_24hr_change=true`,
+      `https://api.binance.com/api/v3/ticker/24hr?symbol=${symbol}`,
       {signal: AbortSignal.timeout(8000)}
     );
     const d = await r.json();
-    _lastPrices = d;
-    return d;
-  } catch (e) {
-    console.warn('Giá lỗi:', e.message);
-    return _lastPrices;
-  }
+    return {
+      usd: parseFloat(d.lastPrice),
+      usd_24h_change: parseFloat(d.priceChangePercent),
+    };
+  } catch { return null; }
+}
+
+// Lấy giá Vàng/Bạc từ Frankfurter (EUR base) + tỷ giá USD
+// XAU, XAG có trong API này qua endpoint currencies
+async function fetchMetalPrice(metal) {
+  // Dùng CoinGecko cho gold/silver — có CORS allow * cho public endpoint
+  try {
+    const id = metal === 'gold' ? 'gold' : 'silver';
+    const r = await fetch(
+      `https://api.coingecko.com/api/v3/simple/price?ids=${id}&vs_currencies=usd&include_24hr_change=true`,
+      {signal: AbortSignal.timeout(10000)}
+    );
+    const d = await r.json();
+    const item = d[id];
+    if (item?.usd) return {usd: item.usd, usd_24h_change: item.usd_24h_change ?? 0};
+  } catch {}
+
+  // Fallback: finage.co public endpoint (không cần key cho metals)
+  try {
+    const sym = metal === 'gold' ? 'XAUUSD' : 'XAGUSD';
+    const r = await fetch(
+      `https://open.er-api.com/v6/latest/USD`,
+      {signal: AbortSignal.timeout(8000)}
+    );
+    const d = await r.json();
+    // er-api không có XAU trực tiếp, trả null để hiện N/A thay crash
+  } catch {}
+  return null;
+}
+
+async function fetchPrices() {
+  const result = {};
+  const [btc, gold, silver] = await Promise.allSettled([
+    fetchBinancePrice('BTCUSDT'),
+    fetchMetalPrice('gold'),
+    fetchMetalPrice('silver'),
+  ]);
+  if (btc.status==='fulfilled' && btc.value)    result['bitcoin'] = btc.value;
+  if (gold.status==='fulfilled' && gold.value)  result['gold']    = gold.value;
+  if (silver.status==='fulfilled' && silver.value) result['silver'] = silver.value;
+
+  if (Object.keys(result).length) _lastPrices = result;
+  else if (Object.keys(_lastPrices).length) return _lastPrices; // dùng cache
+  return result;
 }
 
 function renderPrices(data) {
@@ -477,7 +518,8 @@ function renderTicker(data) {
 }
 
 // ============================================================
-// TIN TỨC — RSS qua rss2json.com
+// TIN TỨC — RSS qua nhiều CORS proxy, tự fallback
+// allorigins.win → corsproxy.io → rss2json.com
 // ============================================================
 let _allItems = [];
 let _seenKeys = new Set(JSON.parse(localStorage.getItem('ttd_seen')||'[]'));
@@ -488,35 +530,80 @@ function hashItem(title, link) {
   return h.toString(36);
 }
 
-async function fetchOneFeed(feed) {
+// Parse XML RSS thủ công (không phụ thuộc thư viện)
+function parseRSSXml(xmlText) {
   try {
-    const url = RSS2JSON + encodeURIComponent(feed.url) + '&count=15';
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(xmlText, 'text/xml');
+    const items = doc.querySelectorAll('item');
+    return Array.from(items).map(el => ({
+      title:   el.querySelector('title')?.textContent?.trim() || '',
+      link:    el.querySelector('link')?.textContent?.trim()
+               || el.querySelector('guid')?.textContent?.trim() || '',
+      pubDate: el.querySelector('pubDate')?.textContent?.trim() || '',
+    })).filter(it => it.title);
+  } catch { return []; }
+}
+
+async function fetchViaProxy(feedUrl) {
+  // Proxy 1: allorigins (trả về JSON bọc nội dung)
+  try {
+    const url = `https://api.allorigins.win/get?url=${encodeURIComponent(feedUrl)}`;
+    const r = await fetch(url, {signal: AbortSignal.timeout(12000)});
+    const j = await r.json();
+    if (j?.contents) return parseRSSXml(j.contents);
+  } catch {}
+
+  // Proxy 2: corsproxy.io (trả thẳng nội dung)
+  try {
+    const url = `https://corsproxy.io/?${encodeURIComponent(feedUrl)}`;
+    const r = await fetch(url, {signal: AbortSignal.timeout(12000)});
+    const text = await r.text();
+    if (text.includes('<item>') || text.includes('<entry>')) return parseRSSXml(text);
+  } catch {}
+
+  // Proxy 3: rss2json (fallback cuối)
+  try {
+    const url = `https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent(feedUrl)}&count=15`;
     const r = await fetch(url, {signal: AbortSignal.timeout(10000)});
     const j = await r.json();
-    if (j.status !== 'ok' || !j.items?.length) return [];
+    if (j.status === 'ok' && j.items?.length) {
+      return j.items.map(it => ({
+        title:   (it.title||'').trim(),
+        link:    it.link||'',
+        pubDate: it.pubDate||'',
+      })).filter(it => it.title);
+    }
+  } catch {}
 
+  return [];
+}
+
+async function fetchOneFeed(feed) {
+  try {
+    const rawItems = await fetchViaProxy(feed.url);
     const cutoff = Date.now() - 24*3600*1000;
-    return j.items
+    return rawItems
       .filter(it => {
-        if (!it.title) return false;
         const pub = it.pubDate ? new Date(it.pubDate).getTime() : Date.now();
-        return pub >= cutoff;
+        return !it.pubDate || pub >= cutoff;
       })
+      .slice(0, 12)
       .map(it => ({
-        title:     (it.title||'').trim(),
-        titleVi:   '',
-        link:      it.link||'',
-        source:    feed.name,
-        pubDate:   it.pubDate||'',
-        topic:     classifyTopic(it.title, feed.topic),
-        isInst:    isInstitution(it.title),
-        key:       hashItem(it.title, it.link),
+        title:   it.title,
+        titleVi: '',
+        link:    it.link,
+        source:  feed.name,
+        pubDate: it.pubDate,
+        topic:   classifyTopic(it.title, feed.topic),
+        isInst:  isInstitution(it.title),
+        key:     hashItem(it.title, it.link),
       }));
   } catch { return []; }
 }
 
 async function fetchAllNews() {
-  // Crawl song song tất cả feed
+  // Crawl song song toàn bộ feed
   const results = await Promise.allSettled(FEEDS.map(f => fetchOneFeed(f)));
   const all = [];
   const seen = new Set();
@@ -528,6 +615,7 @@ async function fetchAllNews() {
       all.push(item);
     }
   }
+  console.log(`[TTDNewsBot] Tổng tin thô: ${all.length}`);
   return all;
 }
 
