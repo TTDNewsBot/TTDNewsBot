@@ -1,0 +1,840 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TTDNewsBot — Trang tổng hợp thông tin tài chính</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=Inter:wght@400;500&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg:        #0B0F1A;
+    --bg2:       #111827;
+    --bg3:       #1A2235;
+    --gold:      #F5C542;
+    --gold-dim:  #B8922E;
+    --teal:      #2DD4BF;
+    --red:       #F87171;
+    --green:     #4ADE80;
+    --text:      #F1F5F9;
+    --muted:     #94A3B8;
+    --border:    rgba(255,255,255,0.08);
+    --border2:   rgba(245,197,66,0.25);
+  }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Inter', sans-serif;
+    font-size: 16px;
+    line-height: 1.7;
+    overflow-x: hidden;
+  }
+
+  /* ── TICKER TAPE ── */
+  .ticker-wrap {
+    background: var(--gold);
+    overflow: hidden;
+    white-space: nowrap;
+    padding: 6px 0;
+    border-bottom: 1px solid var(--gold-dim);
+  }
+  .ticker-inner {
+    display: inline-block;
+    animation: ticker 38s linear infinite;
+  }
+  .ticker-inner span {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    font-weight: 500;
+    color: #1a1100;
+    padding: 0 28px;
+  }
+  .ticker-inner .up   { color: #14532d; }
+  .ticker-inner .down { color: #7f1d1d; }
+  @keyframes ticker { 0%{ transform: translateX(0); } 100%{ transform: translateX(-50%); } }
+
+  /* ── NAV ── */
+  nav {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 20px 5%;
+    border-bottom: 1px solid var(--border);
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    background: rgba(11,15,26,0.92);
+    backdrop-filter: blur(12px);
+  }
+  .nav-logo {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 20px;
+    font-weight: 700;
+    letter-spacing: -0.5px;
+    color: var(--text);
+    text-decoration: none;
+  }
+  .nav-logo span { color: var(--gold); }
+  .nav-links { display: flex; gap: 32px; list-style: none; }
+  .nav-links a {
+    font-size: 14px;
+    color: var(--muted);
+    text-decoration: none;
+    transition: color 0.2s;
+  }
+  .nav-links a:hover { color: var(--text); }
+  .nav-cta {
+    background: var(--gold);
+    color: #0B0F1A;
+    font-weight: 600;
+    font-size: 13px;
+    padding: 8px 20px;
+    border-radius: 6px;
+    text-decoration: none;
+    font-family: 'Space Grotesk', sans-serif;
+    transition: opacity 0.2s;
+  }
+  .nav-cta:hover { opacity: 0.88; }
+
+  /* ── HERO ── */
+  .hero {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 48px;
+    align-items: center;
+    padding: 80px 5% 72px;
+    max-width: 1200px;
+    margin: 0 auto;
+  }
+  .hero-eyebrow {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 12px;
+    font-family: 'JetBrains Mono', monospace;
+    color: var(--gold);
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    margin-bottom: 20px;
+  }
+  .hero-eyebrow::before {
+    content: '';
+    display: inline-block;
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--gold);
+    animation: pulse 2s ease-in-out infinite;
+  }
+  @keyframes pulse {
+    0%,100%{ opacity:1; transform:scale(1); }
+    50%{ opacity:0.4; transform:scale(1.4); }
+  }
+  .hero h1 {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: clamp(36px, 5vw, 60px);
+    font-weight: 700;
+    line-height: 1.1;
+    letter-spacing: -1.5px;
+    margin-bottom: 20px;
+  }
+  .hero h1 .accent { color: var(--gold); }
+  .hero-desc {
+    font-size: 17px;
+    color: var(--muted);
+    line-height: 1.75;
+    margin-bottom: 36px;
+    max-width: 480px;
+  }
+  .hero-actions { display: flex; gap: 14px; align-items: center; flex-wrap: wrap; }
+  .btn-primary {
+    background: var(--gold);
+    color: #0B0F1A;
+    font-family: 'Space Grotesk', sans-serif;
+    font-weight: 700;
+    font-size: 15px;
+    padding: 13px 28px;
+    border-radius: 8px;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    transition: opacity 0.2s, transform 0.15s;
+  }
+  .btn-primary:hover { opacity: 0.9; transform: translateY(-1px); }
+  .btn-secondary {
+    border: 1px solid var(--border2);
+    color: var(--gold);
+    font-family: 'Space Grotesk', sans-serif;
+    font-weight: 500;
+    font-size: 15px;
+    padding: 13px 28px;
+    border-radius: 8px;
+    text-decoration: none;
+    transition: background 0.2s;
+  }
+  .btn-secondary:hover { background: rgba(245,197,66,0.07); }
+
+  /* ── HERO TERMINAL (bên phải) ── */
+  .terminal {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    overflow: hidden;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px;
+    box-shadow: 0 0 60px rgba(245,197,66,0.06);
+  }
+  .terminal-bar {
+    background: var(--bg3);
+    padding: 12px 16px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    border-bottom: 1px solid var(--border);
+  }
+  .dot { width: 10px; height: 10px; border-radius: 50%; }
+  .dot.r { background: #F87171; }
+  .dot.y { background: #FBBF24; }
+  .dot.g { background: #4ADE80; }
+  .terminal-title {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    color: var(--muted);
+    margin-left: 6px;
+  }
+  .terminal-body { padding: 20px; line-height: 2; }
+  .t-line { margin-bottom: 2px; }
+  .t-label { color: var(--muted); }
+  .t-gold  { color: var(--gold); font-weight: 500; }
+  .t-teal  { color: var(--teal); }
+  .t-green { color: var(--green); }
+  .t-red   { color: var(--red); }
+  .t-dim   { color: #475569; }
+  .t-head  { color: var(--gold); font-weight: 700; margin-bottom: 4px; }
+  .t-sep   { color: #1e293b; letter-spacing: 1px; margin: 6px 0; }
+  .blink { animation: blink 1.1s step-end infinite; }
+  @keyframes blink { 50%{ opacity: 0; } }
+
+  /* ── STATS BAR ── */
+  .stats-bar {
+    background: var(--bg2);
+    border-top: 1px solid var(--border);
+    border-bottom: 1px solid var(--border);
+    padding: 28px 5%;
+  }
+  .stats-inner {
+    max-width: 1200px;
+    margin: 0 auto;
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 24px;
+    text-align: center;
+  }
+  .stat-val {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 32px;
+    font-weight: 700;
+    color: var(--gold);
+    letter-spacing: -1px;
+  }
+  .stat-lbl {
+    font-size: 13px;
+    color: var(--muted);
+    margin-top: 4px;
+  }
+
+  /* ── FEATURES ── */
+  .section {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 80px 5%;
+  }
+  .section-eyebrow {
+    font-size: 11px;
+    font-family: 'JetBrains Mono', monospace;
+    color: var(--gold);
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    margin-bottom: 14px;
+  }
+  .section-title {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: clamp(26px, 3.5vw, 40px);
+    font-weight: 700;
+    letter-spacing: -1px;
+    line-height: 1.15;
+    margin-bottom: 14px;
+  }
+  .section-sub {
+    font-size: 16px;
+    color: var(--muted);
+    max-width: 540px;
+    margin-bottom: 48px;
+  }
+  .features-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 20px;
+  }
+  .feat-card {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 28px;
+    transition: border-color 0.2s, transform 0.2s;
+  }
+  .feat-card:hover {
+    border-color: var(--border2);
+    transform: translateY(-3px);
+  }
+  .feat-icon {
+    width: 40px; height: 40px;
+    background: rgba(245,197,66,0.12);
+    border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 18px;
+    margin-bottom: 16px;
+  }
+  .feat-title {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 16px;
+    font-weight: 600;
+    margin-bottom: 8px;
+  }
+  .feat-desc { font-size: 14px; color: var(--muted); line-height: 1.65; }
+
+  /* ── SOURCES ── */
+  .sources-section {
+    background: var(--bg2);
+    border-top: 1px solid var(--border);
+    border-bottom: 1px solid var(--border);
+    padding: 72px 5%;
+  }
+  .sources-inner { max-width: 1200px; margin: 0 auto; }
+  .sources-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
+    margin-top: 40px;
+  }
+  .source-group {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 20px;
+  }
+  .source-group-title {
+    font-size: 11px;
+    font-family: 'JetBrains Mono', monospace;
+    color: var(--gold);
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    margin-bottom: 14px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid var(--border);
+  }
+  .source-item {
+    display: flex; align-items: center; gap: 8px;
+    font-size: 13px;
+    color: var(--muted);
+    padding: 5px 0;
+  }
+  .source-dot {
+    width: 5px; height: 5px;
+    border-radius: 50%;
+    background: var(--gold);
+    flex-shrink: 0;
+  }
+
+  /* ── SAMPLE MESSAGE (preview Telegram) ── */
+  .preview-section { padding: 80px 5%; }
+  .preview-inner {
+    max-width: 1200px;
+    margin: 0 auto;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 60px;
+    align-items: center;
+  }
+  .telegram-mock {
+    background: #17212B;
+    border-radius: 16px;
+    overflow: hidden;
+    border: 1px solid rgba(255,255,255,0.06);
+  }
+  .tg-header {
+    background: #232E3C;
+    padding: 14px 18px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    border-bottom: 1px solid rgba(255,255,255,0.05);
+  }
+  .tg-avatar {
+    width: 38px; height: 38px;
+    border-radius: 50%;
+    background: var(--gold);
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 14px;
+    font-weight: 700;
+    color: #0B0F1A;
+    flex-shrink: 0;
+  }
+  .tg-name { font-size: 14px; font-weight: 600; }
+  .tg-sub  { font-size: 12px; color: var(--teal); }
+  .tg-body { padding: 18px; }
+  .tg-msg {
+    background: #232E3C;
+    border-radius: 12px;
+    border-top-left-radius: 2px;
+    padding: 14px 16px;
+    font-size: 13px;
+    line-height: 1.75;
+  }
+  .tg-msg .msg-title { color: var(--gold); font-weight: 700; margin-bottom: 8px; font-size: 14px; }
+  .tg-msg .msg-sep { color: #2d3f52; margin: 8px 0; }
+  .tg-msg .msg-section { color: var(--teal); font-weight: 600; margin: 10px 0 4px; }
+  .tg-msg .msg-item { color: #CBD5E1; padding-left: 4px; margin: 2px 0; }
+  .tg-msg .msg-item a { color: #60A5FA; text-decoration: none; }
+  .tg-msg .msg-src { color: #475569; font-size: 11px; margin: 8px 0 0; }
+  .tg-msg .up   { color: var(--green); }
+  .tg-msg .down { color: var(--red); }
+  .tg-msg .inst { color: var(--gold); }
+  .tg-time { font-size: 11px; color: #475569; text-align: right; margin-top: 6px; }
+
+  /* ── HOW IT WORKS ── */
+  .how-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 0;
+    margin-top: 48px;
+    position: relative;
+  }
+  .how-grid::before {
+    content: '';
+    position: absolute;
+    top: 28px; left: 12.5%; right: 12.5%;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--border2), transparent);
+  }
+  .how-step { text-align: center; padding: 0 16px; }
+  .how-num {
+    width: 56px; height: 56px;
+    border-radius: 50%;
+    background: var(--bg2);
+    border: 1px solid var(--border2);
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--gold);
+    margin: 0 auto 20px;
+    position: relative;
+    z-index: 1;
+  }
+  .how-title {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 15px;
+    font-weight: 600;
+    margin-bottom: 8px;
+  }
+  .how-desc { font-size: 13px; color: var(--muted); line-height: 1.6; }
+
+  /* ── CTA BOTTOM ── */
+  .cta-section {
+    background: var(--bg2);
+    border-top: 1px solid var(--border);
+    padding: 80px 5%;
+    text-align: center;
+  }
+  .cta-section h2 {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: clamp(28px, 4vw, 46px);
+    font-weight: 700;
+    letter-spacing: -1px;
+    margin-bottom: 16px;
+  }
+  .cta-section p { color: var(--muted); font-size: 17px; margin-bottom: 36px; }
+  .code-block {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 14px 24px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 14px;
+    color: var(--teal);
+    display: inline-block;
+    margin-bottom: 28px;
+    text-align: left;
+    max-width: 500px;
+    width: 100%;
+  }
+  .code-block .prompt { color: var(--gold-dim); user-select: none; }
+
+  /* ── FOOTER ── */
+  footer {
+    background: var(--bg);
+    border-top: 1px solid var(--border);
+    padding: 36px 5%;
+    text-align: center;
+    font-size: 13px;
+    color: var(--muted);
+  }
+  footer a { color: var(--gold-dim); text-decoration: none; }
+  footer a:hover { color: var(--gold); }
+
+  /* ── RESPONSIVE ── */
+  @media (max-width: 900px) {
+    .hero { grid-template-columns: 1fr; }
+    .terminal { display: none; }
+    .features-grid { grid-template-columns: 1fr 1fr; }
+    .sources-grid { grid-template-columns: 1fr 1fr; }
+    .how-grid { grid-template-columns: 1fr 1fr; gap: 32px; }
+    .how-grid::before { display: none; }
+    .preview-inner { grid-template-columns: 1fr; }
+    .stats-inner { grid-template-columns: 1fr 1fr; }
+    nav .nav-links { display: none; }
+  }
+  @media (max-width: 600px) {
+    .features-grid { grid-template-columns: 1fr; }
+    .sources-grid { grid-template-columns: 1fr; }
+    .how-grid { grid-template-columns: 1fr; }
+    .stats-inner { grid-template-columns: 1fr 1fr; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .ticker-inner { animation: none; }
+    .hero-eyebrow::before { animation: none; }
+    .blink { animation: none; }
+  }
+</style>
+</head>
+<body>
+
+<!-- TICKER TAPE -->
+<div class="ticker-wrap" aria-label="Bảng giá tài chính">
+  <div class="ticker-inner" id="ticker">
+    <span>🟡 XAU/USD <strong>3.325,40</strong> <span class="up">▲ +0,82%</span></span>
+    <span>⚪ XAG/USD <strong>33,15</strong> <span class="up">▲ +1,12%</span></span>
+    <span>🟠 BTC/USD <strong>103.820</strong> <span class="up">▲ +2,34%</span></span>
+    <span>📈 S&amp;P 500 <strong>5.942,31</strong> <span class="down">▼ -0,18%</span></span>
+    <span>📊 NASDAQ <strong>19.234,50</strong> <span class="up">▲ +0,45%</span></span>
+    <span>🇻🇳 VN-Index <strong>1.288,65</strong> <span class="up">▲ +0,67%</span></span>
+    <span>💵 DXY <strong>104,12</strong> <span class="down">▼ -0,21%</span></span>
+    <span>🇺🇸 US10Y <strong>4,42%</strong> <span class="up">▲ +3bp</span></span>
+    <span>🟡 XAU/USD <strong>3.325,40</strong> <span class="up">▲ +0,82%</span></span>
+    <span>⚪ XAG/USD <strong>33,15</strong> <span class="up">▲ +1,12%</span></span>
+    <span>🟠 BTC/USD <strong>103.820</strong> <span class="up">▲ +2,34%</span></span>
+    <span>📈 S&amp;P 500 <strong>5.942,31</strong> <span class="down">▼ -0,18%</span></span>
+    <span>📊 NASDAQ <strong>19.234,50</strong> <span class="up">▲ +0,45%</span></span>
+    <span>🇻🇳 VN-Index <strong>1.288,65</strong> <span class="up">▲ +0,67%</span></span>
+    <span>💵 DXY <strong>104,12</strong> <span class="down">▼ -0,21%</span></span>
+    <span>🇺🇸 US10Y <strong>4,42%</strong> <span class="up">▲ +3bp</span></span>
+  </div>
+</div>
+
+<!-- NAV -->
+<nav>
+  <a href="#" class="nav-logo">TTD<span>News</span>Bot</a>
+  <ul class="nav-links">
+    <li><a href="#tinh-nang">Tính năng</a></li>
+    <li><a href="#nguon-tin">Nguồn tin</a></li>
+    <li><a href="#preview">Xem trước</a></li>
+    <li><a href="#cai-dat">Cài đặt</a></li>
+  </ul>
+  <a href="https://t.me/GocnhinTTD_NewsBot" class="nav-cta">Mở Telegram →</a>
+</nav>
+
+<!-- HERO -->
+<section>
+  <div class="hero">
+    <div class="hero-left">
+      <div class="hero-eyebrow">Đang hoạt động — Cập nhật mỗi 15 phút</div>
+      <h1>Bản tin tài chính<br><span class="accent">tự động, chính xác,</span><br>đến thẳng Telegram</h1>
+      <p class="hero-desc">
+        TTDNewsBot tổng hợp tin tức từ hơn 20 nguồn uy tín quốc tế và Việt Nam,
+        tự động dịch sang tiếng Việt, phân tích kỹ thuật Gold, Silver, BTC và
+        gửi thẳng vào Telegram của bạn — không bỏ sót bất kỳ diễn biến nào.
+      </p>
+      <div class="hero-actions">
+        <a href="https://t.me/GocnhinTTD_NewsBot" class="btn-primary">
+          📲 Mở bot Telegram
+        </a>
+        <a href="#cai-dat" class="btn-secondary">Tự cài đặt</a>
+      </div>
+    </div>
+
+    <!-- TERMINAL MOCK -->
+    <div class="terminal" role="img" aria-label="Demo terminal hiển thị bản tin mẫu">
+      <div class="terminal-bar">
+        <div class="dot r"></div>
+        <div class="dot y"></div>
+        <div class="dot g"></div>
+        <span class="terminal-title">TTDNewsBot — financial_news_aggregator.py</span>
+      </div>
+      <div class="terminal-body">
+        <div class="t-line t-dim">2026-06-10 14:30:00 | INFO  | run_cycle | ===== BẮT ĐẦU CHU KỲ =====</div>
+        <div class="t-line t-dim">2026-06-10 14:30:01 | INFO  | fetch_all_prices | Lấy giá GC=F (Vàng)...</div>
+        <div class="t-line"><span class="t-label">  XAU/USD  </span><span class="t-gold">3.325,40</span> <span class="t-green">▲ +0.82%</span> <span class="t-dim">| RSI 58 | trên EMA200</span></div>
+        <div class="t-line"><span class="t-label">  XAG/USD  </span><span class="t-gold">33.15</span>   <span class="t-green">▲ +1.12%</span> <span class="t-dim">| RSI 55 | trên EMA200</span></div>
+        <div class="t-line"><span class="t-label">  BTC/USDT </span><span class="t-gold">103.820</span> <span class="t-green">▲ +2.34%</span> <span class="t-dim">| RSI 61 | trên EMA200</span></div>
+        <div class="t-sep t-line">──────────────────────────────────</div>
+        <div class="t-line t-dim">2026-06-10 14:30:12 | INFO  | fetch_all_news | Crawl 22 feeds...</div>
+        <div class="t-line t-teal">  ✓ CoinDesk: 8 tin  ✓ Kitco: 5 tin</div>
+        <div class="t-line t-teal">  ✓ VnExpress: 12 tin  ✓ CafeF: 9 tin</div>
+        <div class="t-line t-teal">  ✓ PR Newswire (BlackRock, JPMorgan): 3 tin</div>
+        <div class="t-line t-dim">2026-06-10 14:30:28 | INFO  | translate_batch | Dịch 31/44 tiêu đề...</div>
+        <div class="t-sep t-line">──────────────────────────────────</div>
+        <div class="t-line t-dim">2026-06-10 14:30:31 | INFO  | Tin MỚI sau khử trùng lặp: 31</div>
+        <div class="t-line t-green">2026-06-10 14:30:32 | INFO  | [NEWS_SUMMARY] Đã gửi Telegram ✓</div>
+        <div class="t-line"><span class="t-dim">2026-06-10 14:30:32 | INFO  | Chu kỳ tiếp theo lúc </span><span class="t-gold">14:45:00</span> <span class="blink t-gold">_</span></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- STATS BAR -->
+<div class="stats-bar">
+  <div class="stats-inner">
+    <div>
+      <div class="stat-val">22+</div>
+      <div class="stat-lbl">Nguồn tin theo dõi</div>
+    </div>
+    <div>
+      <div class="stat-val">15'</div>
+      <div class="stat-lbl">Chu kỳ cập nhật</div>
+    </div>
+    <div>
+      <div class="stat-val">7</div>
+      <div class="stat-lbl">Chủ đề phân loại</div>
+    </div>
+    <div>
+      <div class="stat-val">24/7</div>
+      <div class="stat-lbl">Hoạt động liên tục</div>
+    </div>
+  </div>
+</div>
+
+<!-- FEATURES -->
+<section class="section" id="tinh-nang">
+  <div class="section-eyebrow">Tính năng</div>
+  <h2 class="section-title">Mọi thứ bạn cần để<br>không bỏ lỡ thị trường</h2>
+  <p class="section-sub">Từ giá realtime đến nhận định từ BlackRock, JPMorgan — tất cả trong một bản tin tiếng Việt.</p>
+
+  <div class="features-grid">
+    <div class="feat-card">
+      <div class="feat-icon">📡</div>
+      <div class="feat-title">Thu thập tự động 24/7</div>
+      <div class="feat-desc">Crawl hơn 22 nguồn RSS uy tín mỗi 15 phút. Hệ thống retry tự động xử lý nguồn gián đoạn, không bao giờ bỏ sót.</div>
+    </div>
+    <div class="feat-card">
+      <div class="feat-icon">🇻🇳</div>
+      <div class="feat-title">Tự động dịch tiếng Việt</div>
+      <div class="feat-desc">Toàn bộ tiêu đề tiếng Anh được dịch sang tiếng Việt qua Google Translate. Nguồn VnExpress, CafeF, Tuổi Trẻ giữ nguyên bản gốc.</div>
+    </div>
+    <div class="feat-card">
+      <div class="feat-icon">📊</div>
+      <div class="feat-title">Phân tích kỹ thuật tích hợp</div>
+      <div class="feat-desc">Giá realtime Gold, Silver, BTC kèm EMA200, RSI14. Nhận diện tự động: test EMA200, quá mua/bán, xu hướng tăng/giảm.</div>
+    </div>
+    <div class="feat-card">
+      <div class="feat-icon">🏛</div>
+      <div class="feat-title">Radar tổ chức lớn</div>
+      <div class="feat-desc">Theo dõi thông cáo chính thức từ BlackRock, JPMorgan, Morgan Stanley, UBS, Goldman Sachs — ưu tiên hiển thị đầu bản tin.</div>
+    </div>
+    <div class="feat-card">
+      <div class="feat-icon">🔕</div>
+      <div class="feat-title">Chống spam thông minh</div>
+      <div class="feat-desc">Khử trùng lặp theo hash nội dung. Cooldown 15 phút giữa các lần gửi. Lưu lịch sử 72h để không bao giờ gửi lại tin cũ.</div>
+    </div>
+    <div class="feat-card">
+      <div class="feat-icon">⚙️</div>
+      <div class="feat-title">Cấu hình linh hoạt</div>
+      <div class="feat-desc">Toàn bộ tham số trong file .env: chu kỳ chạy, cửa sổ tin, cooldown, số tin/chủ đề. Bật/tắt dịch tự động bằng 1 dòng.</div>
+    </div>
+  </div>
+</section>
+
+<!-- SOURCES -->
+<div class="sources-section" id="nguon-tin">
+  <div class="sources-inner">
+    <div class="section-eyebrow">Nguồn tin</div>
+    <h2 class="section-title">Dữ liệu từ những tên tuổi uy tín nhất</h2>
+    <div class="sources-grid">
+      <div class="source-group">
+        <div class="source-group-title">₿ Crypto</div>
+        <div class="source-item"><div class="source-dot"></div>CoinDesk</div>
+        <div class="source-item"><div class="source-dot"></div>Cointelegraph</div>
+        <div class="source-item"><div class="source-dot"></div>Bitcoin Magazine</div>
+        <div class="source-item"><div class="source-dot"></div>Decrypt</div>
+      </div>
+      <div class="source-group">
+        <div class="source-group-title">🥇 Kim loại quý</div>
+        <div class="source-item"><div class="source-dot"></div>Kitco News</div>
+        <div class="source-item"><div class="source-dot"></div>Mining.com</div>
+        <div class="source-item"><div class="source-dot"></div>GoldPrice.org</div>
+        <div class="source-item"><div class="source-dot"></div>ETF.com</div>
+      </div>
+      <div class="source-group">
+        <div class="source-group-title">🏛 Tổ chức & Vĩ mô</div>
+        <div class="source-item"><div class="source-dot"></div>Federal Reserve</div>
+        <div class="source-item"><div class="source-dot"></div>IMF</div>
+        <div class="source-item"><div class="source-dot"></div>PR Newswire</div>
+        <div class="source-item"><div class="source-dot"></div>BusinessWire</div>
+      </div>
+      <div class="source-group">
+        <div class="source-group-title">🇻🇳 Việt Nam</div>
+        <div class="source-item"><div class="source-dot"></div>VnExpress Kinh doanh</div>
+        <div class="source-item"><div class="source-dot"></div>CafeF Chứng khoán</div>
+        <div class="source-item"><div class="source-dot"></div>Tuổi Trẻ Kinh tế</div>
+        <div class="source-item"><div class="source-dot"></div>CafeF Vĩ mô</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- PREVIEW TELEGRAM -->
+<section class="preview-section" id="preview">
+  <div class="preview-inner">
+    <div>
+      <div class="section-eyebrow">Xem trước</div>
+      <h2 class="section-title">Bản tin trực tiếp trong Telegram</h2>
+      <p style="color: var(--muted); font-size: 16px; line-height: 1.75; margin-bottom: 24px;">
+        Mỗi 15 phút, bạn nhận được bản tin HTML có cấu trúc rõ ràng:
+        giá và kỹ thuật đầu, rồi đến nhận định tổ chức lớn, tin vàng/bạc, BTC, vĩ mô, Việt Nam.
+      </p>
+      <ul style="list-style: none; display: flex; flex-direction: column; gap: 12px;">
+        <li style="display:flex; gap:10px; align-items:flex-start; font-size:14px; color:var(--muted);">
+          <span style="color:var(--gold); margin-top:2px;">✓</span>
+          Tiêu đề rõ ràng với timestamp UTC
+        </li>
+        <li style="display:flex; gap:10px; align-items:flex-start; font-size:14px; color:var(--muted);">
+          <span style="color:var(--gold); margin-top:2px;">✓</span>
+          Tin từ BlackRock, JPMorgan, Goldman được đánh dấu 🏛 và đẩy lên đầu
+        </li>
+        <li style="display:flex; gap:10px; align-items:flex-start; font-size:14px; color:var(--muted);">
+          <span style="color:var(--gold); margin-top:2px;">✓</span>
+          Mỗi tin có link gốc, nguồn và đã dịch tiếng Việt
+        </li>
+        <li style="display:flex; gap:10px; align-items:flex-start; font-size:14px; color:var(--muted);">
+          <span style="color:var(--gold); margin-top:2px;">✓</span>
+          Tự tách message nếu nội dung vượt 4096 ký tự
+        </li>
+      </ul>
+    </div>
+
+    <!-- TELEGRAM MOCKUP -->
+    <div class="telegram-mock">
+      <div class="tg-header">
+        <div class="tg-avatar">TTD</div>
+        <div>
+          <div class="tg-name">TTDNewsBot</div>
+          <div class="tg-sub">bot • đang hoạt động</div>
+        </div>
+      </div>
+      <div class="tg-body">
+        <div class="tg-msg">
+          <div class="msg-title">📰 FINANCIAL BRIEFING — 10/06/2026 14:30 UTC</div>
+          <div class="msg-sep">━━━━━━━━━━━━━━━━━━</div>
+          <div>💹 <strong>GIÁ &amp; KỸ THUẬT</strong></div>
+          <div class="msg-item">• <strong>Vàng (XAU):</strong> 3.325 <span class="up">▲ +0.82%</span></div>
+          <div class="msg-item" style="padding-left:16px; font-size:12px; color:#64748B;">↳ trên EMA200, RSI 58</div>
+          <div class="msg-item">• <strong>Bitcoin:</strong> 103.820 <span class="up">▲ +2.34%</span></div>
+          <div class="msg-sep">━━━━━━━━━━━━━━━━━━</div>
+          <div class="msg-section">🏛 NHẬN ĐỊNH TỔ CHỨC LỚN</div>
+          <div class="msg-item inst">🏛 <a href="#">BlackRock tăng phân bổ vàng trong danh mục 2026</a></div>
+          <div class="msg-item" style="font-size:11px; color:#475569; padding-left:16px;">(PR Newswire)</div>
+          <div class="msg-item inst">🏛 <a href="#">JPMorgan: BTC có thể đạt 120.000 USD trong Q3</a></div>
+          <div class="msg-section">🥇 VÀNG &amp; BẠC</div>
+          <div class="msg-item">• <a href="#">Fed giữ lãi suất, vàng phản ứng tích cực</a></div>
+          <div class="msg-item">• <a href="#">Trung Quốc tăng dự trữ vàng tháng thứ 8 liên tiếp</a></div>
+          <div class="msg-sep">━━━━━━━━━━━━━━━━━━</div>
+          <div class="msg-src">📚 Nguồn: CoinDesk, Kitco, PR Newswire, VnExpress...</div>
+          <div class="msg-src">⚠️ Chỉ tham khảo, không phải khuyến nghị đầu tư.</div>
+        </div>
+        <div class="tg-time">14:30 ✓✓</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- HOW IT WORKS -->
+<div style="background: var(--bg2); border-top: 1px solid var(--border); border-bottom: 1px solid var(--border);">
+  <div class="section">
+    <div class="section-eyebrow">Cách hoạt động</div>
+    <h2 class="section-title">Chạy trong 4 bước đơn giản</h2>
+    <div class="how-grid">
+      <div class="how-step">
+        <div class="how-num">1</div>
+        <div class="how-title">Cài thư viện</div>
+        <div class="how-desc"><code style="font-family:'JetBrains Mono'; font-size:12px; color:var(--teal);">pip install -r requirements.txt</code> là đủ. Python 3.8+ trở lên.</div>
+      </div>
+      <div class="how-step">
+        <div class="how-num">2</div>
+        <div class="how-title">Cấu hình .env</div>
+        <div class="how-desc">Điền TELEGRAM_TOKEN và TELEGRAM_CHAT_ID từ BotFather vào file .env.</div>
+      </div>
+      <div class="how-step">
+        <div class="how-num">3</div>
+        <div class="how-title">Chạy script</div>
+        <div class="how-desc"><code style="font-family:'JetBrains Mono'; font-size:12px; color:var(--teal);">python financial_news_aggregator.py</code> — tự động chạy chu kỳ đầu ngay lập tức.</div>
+      </div>
+      <div class="how-step">
+        <div class="how-num">4</div>
+        <div class="how-title">Nhận bản tin</div>
+        <div class="how-desc">Sau ~90 giây, bản tin đầu tiên xuất hiện trong Telegram. Tiếp tục mỗi 15 phút.</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- CTA BOTTOM -->
+<div class="cta-section" id="cai-dat">
+  <h2>Bắt đầu nhận tin ngay hôm nay</h2>
+  <p>Mã nguồn mở, miễn phí, chạy trên máy tính cá nhân của bạn.</p>
+  <div class="code-block">
+    <span class="prompt">$ </span>pip install -r requirements.txt<br>
+    <span class="prompt">$ </span>cp .env.example .env<br>
+    <span class="prompt">$ </span>python financial_news_aggregator.py
+  </div>
+  <br>
+  <div style="display:flex; gap:16px; justify-content:center; flex-wrap:wrap;">
+    <a href="https://t.me/GocnhinTTD_NewsBot" class="btn-primary" style="text-decoration:none;">📲 Mở bot Telegram</a>
+    <a href="#tinh-nang" class="btn-secondary" style="text-decoration:none;">Xem tính năng</a>
+  </div>
+</div>
+
+<!-- FOOTER -->
+<footer>
+  <p style="margin-bottom:10px;">
+    <strong style="color:var(--text);">TTDNewsBot</strong> — Trang tổng hợp thông tin tài chính tự động
+  </p>
+  <p>
+    Liên hệ: <a href="https://t.me/GocnhinTTD_NewsBot">Telegram</a> &nbsp;|&nbsp;
+    Dữ liệu: CoinDesk · Kitco · VnExpress · Fed · IMF · PR Newswire &nbsp;|&nbsp;
+    Giá trong ticker mang tính minh họa
+  </p>
+  <p style="margin-top:10px; font-size:12px; color:#334155;">
+    ⚠️ Nội dung chỉ mang tính tham khảo. Không phải khuyến nghị đầu tư.
+    Tự chịu trách nhiệm với quyết định giao dịch của bạn.
+  </p>
+</footer>
+
+<script>
+document.querySelectorAll('a[href^="#"]').forEach(a => {
+  a.addEventListener('click', e => {
+    const id = a.getAttribute('href').slice(1);
+    const el = document.getElementById(id);
+    if (el) { e.preventDefault(); el.scrollIntoView({ behavior: 'smooth', block: 'start' }); }
+  });
+});
+</script>
+</body>
+</html>
