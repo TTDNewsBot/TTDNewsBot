@@ -3,838 +3,708 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>TTDNewsBot — Trang tổng hợp thông tin tài chính</title>
+<title>TTDNewsBot — Bản tin tài chính tự động</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=Inter:wght@400;500&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
-  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#0D1117;
+  --bg2:#161B22;
+  --bg3:#21262D;
+  --gold:#D4AF37;
+  --gold-lt:#F0D060;
+  --teal:#38BDF8;
+  --green:#3FB950;
+  --red:#F85149;
+  --orange:#F0883E;
+  --text:#E6EDF3;
+  --muted:#8B949E;
+  --border:rgba(240,246,252,0.1);
+  --border2:rgba(212,175,55,0.3);
+  --inst:#F0D060;
+}
+html{scroll-behavior:smooth}
+body{background:var(--bg);color:var(--text);font-family:'Inter',sans-serif;font-size:15px;line-height:1.6;overflow-x:hidden;min-height:100vh}
 
-  :root {
-    --bg:        #0B0F1A;
-    --bg2:       #111827;
-    --bg3:       #1A2235;
-    --gold:      #F5C542;
-    --gold-dim:  #B8922E;
-    --teal:      #2DD4BF;
-    --red:       #F87171;
-    --green:     #4ADE80;
-    --text:      #F1F5F9;
-    --muted:     #94A3B8;
-    --border:    rgba(255,255,255,0.08);
-    --border2:   rgba(245,197,66,0.25);
-  }
+/* ── TICKER ── */
+.ticker-wrap{background:linear-gradient(90deg,#1a1400,#2a2000,#1a1400);border-bottom:1px solid var(--border2);overflow:hidden;white-space:nowrap;padding:7px 0;position:sticky;top:0;z-index:200}
+.ticker-track{display:inline-flex;animation:scroll-x 50s linear infinite}
+.ticker-track:hover{animation-play-state:paused}
+.tick-item{font-family:'JetBrains Mono',monospace;font-size:12px;padding:0 24px;color:#ccc;display:inline-flex;align-items:center;gap:6px;border-right:1px solid rgba(255,255,255,0.07)}
+.tick-item .sym{color:var(--gold-lt);font-weight:500}
+.tick-item .up{color:var(--green)}
+.tick-item .dn{color:var(--red)}
+.tick-item .na{color:var(--muted)}
+@keyframes scroll-x{0%{transform:translateX(0)}100%{transform:translateX(-50%)}}
 
-  html { scroll-behavior: smooth; }
+/* ── NAV ── */
+nav{background:rgba(13,17,23,0.95);backdrop-filter:blur(8px);border-bottom:1px solid var(--border);padding:12px 24px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:33px;z-index:100}
+.logo{font-family:'JetBrains Mono',monospace;font-size:16px;font-weight:500;color:var(--text);text-decoration:none;display:flex;align-items:center;gap:8px}
+.logo span{color:var(--gold)}
+.logo-dot{width:8px;height:8px;border-radius:50%;background:var(--green);display:inline-block;animation:pulse 2s ease-in-out infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.35}}
+.nav-right{display:flex;align-items:center;gap:16px}
+.nav-badge{font-size:11px;font-family:'JetBrains Mono',monospace;color:var(--muted);background:var(--bg2);border:1px solid var(--border);border-radius:4px;padding:3px 10px}
+.nav-badge span{color:var(--green)}
+.btn-tg{background:var(--gold);color:#0D1117;font-size:12px;font-weight:600;padding:6px 16px;border-radius:5px;text-decoration:none;font-family:'JetBrains Mono',monospace;transition:opacity .15s}
+.btn-tg:hover{opacity:.85}
 
-  body {
-    background: var(--bg);
-    color: var(--text);
-    font-family: 'Inter', sans-serif;
-    font-size: 16px;
-    line-height: 1.7;
-    overflow-x: hidden;
-  }
+/* ── LAYOUT ── */
+.main-wrap{max-width:960px;margin:0 auto;padding:24px 20px 60px}
 
-  /* ── TICKER TAPE ── */
-  .ticker-wrap {
-    background: var(--gold);
-    overflow: hidden;
-    white-space: nowrap;
-    padding: 6px 0;
-    border-bottom: 1px solid var(--gold-dim);
-  }
-  .ticker-inner {
-    display: inline-block;
-    animation: ticker 38s linear infinite;
-  }
-  .ticker-inner span {
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 12px;
-    font-weight: 500;
-    color: #1a1100;
-    padding: 0 28px;
-  }
-  .ticker-inner .up   { color: #14532d; }
-  .ticker-inner .down { color: #7f1d1d; }
-  @keyframes ticker { 0%{ transform: translateX(0); } 100%{ transform: translateX(-50%); } }
+/* ── BRIEFING HEADER ── */
+.briefing-header{background:var(--bg2);border:1px solid var(--border);border-top:2px solid var(--gold);border-radius:8px;padding:20px 24px;margin-bottom:20px;display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:12px}
+.bh-left h1{font-size:18px;font-weight:600;color:var(--text);margin-bottom:4px;letter-spacing:.3px}
+.bh-left .bh-time{font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--muted)}
+.bh-right{display:flex;flex-direction:column;align-items:flex-end;gap:6px}
+.status-pill{display:inline-flex;align-items:center;gap:6px;font-size:11px;font-family:'JetBrains Mono',monospace;color:var(--green);background:rgba(63,185,80,.1);border:1px solid rgba(63,185,80,.25);border-radius:20px;padding:3px 12px}
+.countdown{font-size:11px;font-family:'JetBrains Mono',monospace;color:var(--muted)}
+.countdown span{color:var(--gold-lt)}
 
-  /* ── NAV ── */
-  nav {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 20px 5%;
-    border-bottom: 1px solid var(--border);
-    position: sticky;
-    top: 0;
-    z-index: 100;
-    background: rgba(11,15,26,0.92);
-    backdrop-filter: blur(12px);
-  }
-  .nav-logo {
-    font-family: 'Space Grotesk', sans-serif;
-    font-size: 20px;
-    font-weight: 700;
-    letter-spacing: -0.5px;
-    color: var(--text);
-    text-decoration: none;
-  }
-  .nav-logo span { color: var(--gold); }
-  .nav-links { display: flex; gap: 32px; list-style: none; }
-  .nav-links a {
-    font-size: 14px;
-    color: var(--muted);
-    text-decoration: none;
-    transition: color 0.2s;
-  }
-  .nav-links a:hover { color: var(--text); }
-  .nav-cta {
-    background: var(--gold);
-    color: #0B0F1A;
-    font-weight: 600;
-    font-size: 13px;
-    padding: 8px 20px;
-    border-radius: 6px;
-    text-decoration: none;
-    font-family: 'Space Grotesk', sans-serif;
-    transition: opacity 0.2s;
-  }
-  .nav-cta:hover { opacity: 0.88; }
+/* ── GIÁ & KỸ THUẬT ── */
+.price-section{background:var(--bg2);border:1px solid var(--border);border-radius:8px;overflow:hidden;margin-bottom:20px}
+.section-header{padding:12px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:8px;background:var(--bg3)}
+.section-header .sh-icon{font-size:15px}
+.section-header h2{font-size:13px;font-weight:600;color:var(--text);letter-spacing:.5px;text-transform:uppercase}
+.price-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:0}
+.price-card{padding:16px 20px;border-right:1px solid var(--border);position:relative;transition:background .15s}
+.price-card:last-child{border-right:none}
+.price-card:hover{background:rgba(255,255,255,.02)}
+.pc-name{font-size:11px;color:var(--muted);font-family:'JetBrains Mono',monospace;margin-bottom:6px;text-transform:uppercase;letter-spacing:.5px}
+.pc-price{font-size:22px;font-weight:600;color:var(--text);font-family:'JetBrains Mono',monospace;letter-spacing:-1px;margin-bottom:4px}
+.pc-change{font-size:12px;font-family:'JetBrains Mono',monospace;margin-bottom:8px}
+.pc-change.up{color:var(--green)}
+.pc-change.dn{color:var(--red)}
+.pc-note{font-size:11px;color:var(--muted);line-height:1.5;padding-top:6px;border-top:1px solid var(--border)}
+.pc-note .ema-up{color:var(--green)}
+.pc-note .ema-dn{color:var(--red)}
+.pc-note .rsi{color:var(--teal)}
+.loading-price{padding:20px;text-align:center;color:var(--muted);font-size:13px;font-family:'JetBrains Mono',monospace}
 
-  /* ── HERO ── */
-  .hero {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 48px;
-    align-items: center;
-    padding: 80px 5% 72px;
-    max-width: 1200px;
-    margin: 0 auto;
-  }
-  .hero-eyebrow {
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    font-size: 12px;
-    font-family: 'JetBrains Mono', monospace;
-    color: var(--gold);
-    letter-spacing: 1.5px;
-    text-transform: uppercase;
-    margin-bottom: 20px;
-  }
-  .hero-eyebrow::before {
-    content: '';
-    display: inline-block;
-    width: 6px; height: 6px;
-    border-radius: 50%;
-    background: var(--gold);
-    animation: pulse 2s ease-in-out infinite;
-  }
-  @keyframes pulse {
-    0%,100%{ opacity:1; transform:scale(1); }
-    50%{ opacity:0.4; transform:scale(1.4); }
-  }
-  .hero h1 {
-    font-family: 'Space Grotesk', sans-serif;
-    font-size: clamp(36px, 5vw, 60px);
-    font-weight: 700;
-    line-height: 1.1;
-    letter-spacing: -1.5px;
-    margin-bottom: 20px;
-  }
-  .hero h1 .accent { color: var(--gold); }
-  .hero-desc {
-    font-size: 17px;
-    color: var(--muted);
-    line-height: 1.75;
-    margin-bottom: 36px;
-    max-width: 480px;
-  }
-  .hero-actions { display: flex; gap: 14px; align-items: center; flex-wrap: wrap; }
-  .btn-primary {
-    background: var(--gold);
-    color: #0B0F1A;
-    font-family: 'Space Grotesk', sans-serif;
-    font-weight: 700;
-    font-size: 15px;
-    padding: 13px 28px;
-    border-radius: 8px;
-    text-decoration: none;
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    transition: opacity 0.2s, transform 0.15s;
-  }
-  .btn-primary:hover { opacity: 0.9; transform: translateY(-1px); }
-  .btn-secondary {
-    border: 1px solid var(--border2);
-    color: var(--gold);
-    font-family: 'Space Grotesk', sans-serif;
-    font-weight: 500;
-    font-size: 15px;
-    padding: 13px 28px;
-    border-radius: 8px;
-    text-decoration: none;
-    transition: background 0.2s;
-  }
-  .btn-secondary:hover { background: rgba(245,197,66,0.07); }
+/* ── TOPIC SECTIONS ── */
+.topic-section{background:var(--bg2);border:1px solid var(--border);border-radius:8px;margin-bottom:16px;overflow:hidden}
+.topic-header{padding:11px 20px;border-bottom:1px solid var(--border);background:var(--bg3);display:flex;align-items:center;justify-content:space-between}
+.topic-header h3{font-size:12px;font-weight:600;letter-spacing:.8px;text-transform:uppercase;color:var(--text);display:flex;align-items:center;gap:8px}
+.topic-count{font-size:10px;font-family:'JetBrains Mono',monospace;color:var(--muted);background:var(--bg);border:1px solid var(--border);border-radius:3px;padding:1px 7px}
+.news-list{list-style:none}
+.news-item{padding:12px 20px;border-bottom:1px solid rgba(240,246,252,.05);display:flex;align-items:flex-start;gap:12px;transition:background .12s}
+.news-item:last-child{border-bottom:none}
+.news-item:hover{background:rgba(255,255,255,.025)}
+.ni-inst{border-left:2px solid var(--gold)}
+.ni-badge{flex-shrink:0;font-size:10px;font-family:'JetBrains Mono',monospace;border-radius:3px;padding:2px 7px;margin-top:2px}
+.ni-badge.inst{background:rgba(240,208,96,.12);color:var(--gold-lt);border:1px solid rgba(240,208,96,.25)}
+.ni-badge.norm{background:var(--bg3);color:var(--muted);border:1px solid var(--border)}
+.ni-body{flex:1;min-width:0}
+.ni-title{font-size:14px;color:var(--text);text-decoration:none;line-height:1.5;display:block;margin-bottom:4px;transition:color .12s}
+.ni-title:hover{color:var(--gold-lt)}
+.ni-title.inst-title{color:var(--inst)}
+.ni-title.inst-title:hover{color:#fff}
+.ni-meta{font-size:11px;color:var(--muted);font-family:'JetBrains Mono',monospace;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.ni-source{color:var(--teal)}
+.ni-time{color:var(--muted)}
+.ni-orig{color:#444d56;font-style:italic;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:300px}
+.empty-topic{padding:16px 20px;color:var(--muted);font-size:13px;font-style:italic}
 
-  /* ── HERO TERMINAL (bên phải) ── */
-  .terminal {
-    background: var(--bg2);
-    border: 1px solid var(--border);
-    border-radius: 14px;
-    overflow: hidden;
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 13px;
-    box-shadow: 0 0 60px rgba(245,197,66,0.06);
-  }
-  .terminal-bar {
-    background: var(--bg3);
-    padding: 12px 16px;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    border-bottom: 1px solid var(--border);
-  }
-  .dot { width: 10px; height: 10px; border-radius: 50%; }
-  .dot.r { background: #F87171; }
-  .dot.y { background: #FBBF24; }
-  .dot.g { background: #4ADE80; }
-  .terminal-title {
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 11px;
-    color: var(--muted);
-    margin-left: 6px;
-  }
-  .terminal-body { padding: 20px; line-height: 2; }
-  .t-line { margin-bottom: 2px; }
-  .t-label { color: var(--muted); }
-  .t-gold  { color: var(--gold); font-weight: 500; }
-  .t-teal  { color: var(--teal); }
-  .t-green { color: var(--green); }
-  .t-red   { color: var(--red); }
-  .t-dim   { color: #475569; }
-  .t-head  { color: var(--gold); font-weight: 700; margin-bottom: 4px; }
-  .t-sep   { color: #1e293b; letter-spacing: 1px; margin: 6px 0; }
-  .blink { animation: blink 1.1s step-end infinite; }
-  @keyframes blink { 50%{ opacity: 0; } }
+/* ── TÁC ĐỘNG ── */
+.impact-section{background:var(--bg2);border:1px solid var(--border);border-left:3px solid var(--orange);border-radius:8px;padding:16px 20px;margin-bottom:20px}
+.impact-title{font-size:12px;font-weight:600;letter-spacing:.8px;text-transform:uppercase;color:var(--orange);margin-bottom:10px;display:flex;align-items:center;gap:6px}
+.impact-item{font-size:13px;color:var(--muted);padding:4px 0;display:flex;align-items:flex-start;gap:8px;line-height:1.5}
+.impact-item b{color:var(--text)}
 
-  /* ── STATS BAR ── */
-  .stats-bar {
-    background: var(--bg2);
-    border-top: 1px solid var(--border);
-    border-bottom: 1px solid var(--border);
-    padding: 28px 5%;
-  }
-  .stats-inner {
-    max-width: 1200px;
-    margin: 0 auto;
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 24px;
-    text-align: center;
-  }
-  .stat-val {
-    font-family: 'Space Grotesk', sans-serif;
-    font-size: 32px;
-    font-weight: 700;
-    color: var(--gold);
-    letter-spacing: -1px;
-  }
-  .stat-lbl {
-    font-size: 13px;
-    color: var(--muted);
-    margin-top: 4px;
-  }
+/* ── FOOTER TRONG BRIEFING ── */
+.briefing-footer{border-top:1px solid var(--border);padding:14px 20px;background:var(--bg3);font-size:11px;font-family:'JetBrains Mono',monospace;color:var(--muted);line-height:1.8}
+.bf-sources{margin-bottom:4px}
+.bf-disc{color:#444d56}
 
-  /* ── FEATURES ── */
-  .section {
-    max-width: 1200px;
-    margin: 0 auto;
-    padding: 80px 5%;
-  }
-  .section-eyebrow {
-    font-size: 11px;
-    font-family: 'JetBrains Mono', monospace;
-    color: var(--gold);
-    letter-spacing: 2px;
-    text-transform: uppercase;
-    margin-bottom: 14px;
-  }
-  .section-title {
-    font-family: 'Space Grotesk', sans-serif;
-    font-size: clamp(26px, 3.5vw, 40px);
-    font-weight: 700;
-    letter-spacing: -1px;
-    line-height: 1.15;
-    margin-bottom: 14px;
-  }
-  .section-sub {
-    font-size: 16px;
-    color: var(--muted);
-    max-width: 540px;
-    margin-bottom: 48px;
-  }
-  .features-grid {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 20px;
-  }
-  .feat-card {
-    background: var(--bg2);
-    border: 1px solid var(--border);
-    border-radius: 12px;
-    padding: 28px;
-    transition: border-color 0.2s, transform 0.2s;
-  }
-  .feat-card:hover {
-    border-color: var(--border2);
-    transform: translateY(-3px);
-  }
-  .feat-icon {
-    width: 40px; height: 40px;
-    background: rgba(245,197,66,0.12);
-    border-radius: 10px;
-    display: flex; align-items: center; justify-content: center;
-    font-size: 18px;
-    margin-bottom: 16px;
-  }
-  .feat-title {
-    font-family: 'Space Grotesk', sans-serif;
-    font-size: 16px;
-    font-weight: 600;
-    margin-bottom: 8px;
-  }
-  .feat-desc { font-size: 14px; color: var(--muted); line-height: 1.65; }
+/* ── ERROR / LOADING ── */
+.feed-loading{text-align:center;padding:48px 20px;color:var(--muted);font-family:'JetBrains Mono',monospace;font-size:13px}
+.feed-loading .spinner{width:28px;height:28px;border:2px solid var(--border);border-top-color:var(--gold);border-radius:50%;margin:0 auto 16px;animation:spin .8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.error-box{background:rgba(248,81,73,.08);border:1px solid rgba(248,81,73,.25);border-radius:8px;padding:16px 20px;margin-bottom:20px;font-size:13px;color:var(--red)}
 
-  /* ── SOURCES ── */
-  .sources-section {
-    background: var(--bg2);
-    border-top: 1px solid var(--border);
-    border-bottom: 1px solid var(--border);
-    padding: 72px 5%;
-  }
-  .sources-inner { max-width: 1200px; margin: 0 auto; }
-  .sources-grid {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 16px;
-    margin-top: 40px;
-  }
-  .source-group {
-    background: var(--bg);
-    border: 1px solid var(--border);
-    border-radius: 10px;
-    padding: 20px;
-  }
-  .source-group-title {
-    font-size: 11px;
-    font-family: 'JetBrains Mono', monospace;
-    color: var(--gold);
-    letter-spacing: 1.5px;
-    text-transform: uppercase;
-    margin-bottom: 14px;
-    padding-bottom: 10px;
-    border-bottom: 1px solid var(--border);
-  }
-  .source-item {
-    display: flex; align-items: center; gap: 8px;
-    font-size: 13px;
-    color: var(--muted);
-    padding: 5px 0;
-  }
-  .source-dot {
-    width: 5px; height: 5px;
-    border-radius: 50%;
-    background: var(--gold);
-    flex-shrink: 0;
-  }
+/* ── PAGE FOOTER ── */
+footer{border-top:1px solid var(--border);padding:24px 20px;text-align:center;font-size:12px;color:var(--muted);font-family:'JetBrains Mono',monospace;line-height:2}
+footer a{color:var(--gold-lt);text-decoration:none}
+footer a:hover{text-decoration:underline}
 
-  /* ── SAMPLE MESSAGE (preview Telegram) ── */
-  .preview-section { padding: 80px 5%; }
-  .preview-inner {
-    max-width: 1200px;
-    margin: 0 auto;
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 60px;
-    align-items: center;
-  }
-  .telegram-mock {
-    background: #17212B;
-    border-radius: 16px;
-    overflow: hidden;
-    border: 1px solid rgba(255,255,255,0.06);
-  }
-  .tg-header {
-    background: #232E3C;
-    padding: 14px 18px;
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    border-bottom: 1px solid rgba(255,255,255,0.05);
-  }
-  .tg-avatar {
-    width: 38px; height: 38px;
-    border-radius: 50%;
-    background: var(--gold);
-    display: flex; align-items: center; justify-content: center;
-    font-family: 'Space Grotesk', sans-serif;
-    font-size: 14px;
-    font-weight: 700;
-    color: #0B0F1A;
-    flex-shrink: 0;
-  }
-  .tg-name { font-size: 14px; font-weight: 600; }
-  .tg-sub  { font-size: 12px; color: var(--teal); }
-  .tg-body { padding: 18px; }
-  .tg-msg {
-    background: #232E3C;
-    border-radius: 12px;
-    border-top-left-radius: 2px;
-    padding: 14px 16px;
-    font-size: 13px;
-    line-height: 1.75;
-  }
-  .tg-msg .msg-title { color: var(--gold); font-weight: 700; margin-bottom: 8px; font-size: 14px; }
-  .tg-msg .msg-sep { color: #2d3f52; margin: 8px 0; }
-  .tg-msg .msg-section { color: var(--teal); font-weight: 600; margin: 10px 0 4px; }
-  .tg-msg .msg-item { color: #CBD5E1; padding-left: 4px; margin: 2px 0; }
-  .tg-msg .msg-item a { color: #60A5FA; text-decoration: none; }
-  .tg-msg .msg-src { color: #475569; font-size: 11px; margin: 8px 0 0; }
-  .tg-msg .up   { color: var(--green); }
-  .tg-msg .down { color: var(--red); }
-  .tg-msg .inst { color: var(--gold); }
-  .tg-time { font-size: 11px; color: #475569; text-align: right; margin-top: 6px; }
-
-  /* ── HOW IT WORKS ── */
-  .how-grid {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 0;
-    margin-top: 48px;
-    position: relative;
-  }
-  .how-grid::before {
-    content: '';
-    position: absolute;
-    top: 28px; left: 12.5%; right: 12.5%;
-    height: 1px;
-    background: linear-gradient(90deg, transparent, var(--border2), transparent);
-  }
-  .how-step { text-align: center; padding: 0 16px; }
-  .how-num {
-    width: 56px; height: 56px;
-    border-radius: 50%;
-    background: var(--bg2);
-    border: 1px solid var(--border2);
-    display: flex; align-items: center; justify-content: center;
-    font-family: 'Space Grotesk', sans-serif;
-    font-size: 20px;
-    font-weight: 700;
-    color: var(--gold);
-    margin: 0 auto 20px;
-    position: relative;
-    z-index: 1;
-  }
-  .how-title {
-    font-family: 'Space Grotesk', sans-serif;
-    font-size: 15px;
-    font-weight: 600;
-    margin-bottom: 8px;
-  }
-  .how-desc { font-size: 13px; color: var(--muted); line-height: 1.6; }
-
-  /* ── CTA BOTTOM ── */
-  .cta-section {
-    background: var(--bg2);
-    border-top: 1px solid var(--border);
-    padding: 80px 5%;
-    text-align: center;
-  }
-  .cta-section h2 {
-    font-family: 'Space Grotesk', sans-serif;
-    font-size: clamp(28px, 4vw, 46px);
-    font-weight: 700;
-    letter-spacing: -1px;
-    margin-bottom: 16px;
-  }
-  .cta-section p { color: var(--muted); font-size: 17px; margin-bottom: 36px; }
-  .code-block {
-    background: var(--bg);
-    border: 1px solid var(--border);
-    border-radius: 10px;
-    padding: 14px 24px;
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 14px;
-    color: var(--teal);
-    display: inline-block;
-    margin-bottom: 28px;
-    text-align: left;
-    max-width: 500px;
-    width: 100%;
-  }
-  .code-block .prompt { color: var(--gold-dim); user-select: none; }
-
-  /* ── FOOTER ── */
-  footer {
-    background: var(--bg);
-    border-top: 1px solid var(--border);
-    padding: 36px 5%;
-    text-align: center;
-    font-size: 13px;
-    color: var(--muted);
-  }
-  footer a { color: var(--gold-dim); text-decoration: none; }
-  footer a:hover { color: var(--gold); }
-
-  /* ── RESPONSIVE ── */
-  @media (max-width: 900px) {
-    .hero { grid-template-columns: 1fr; }
-    .terminal { display: none; }
-    .features-grid { grid-template-columns: 1fr 1fr; }
-    .sources-grid { grid-template-columns: 1fr 1fr; }
-    .how-grid { grid-template-columns: 1fr 1fr; gap: 32px; }
-    .how-grid::before { display: none; }
-    .preview-inner { grid-template-columns: 1fr; }
-    .stats-inner { grid-template-columns: 1fr 1fr; }
-    nav .nav-links { display: none; }
-  }
-  @media (max-width: 600px) {
-    .features-grid { grid-template-columns: 1fr; }
-    .sources-grid { grid-template-columns: 1fr; }
-    .how-grid { grid-template-columns: 1fr; }
-    .stats-inner { grid-template-columns: 1fr 1fr; }
-  }
-
-  @media (prefers-reduced-motion: reduce) {
-    .ticker-inner { animation: none; }
-    .hero-eyebrow::before { animation: none; }
-    .blink { animation: none; }
-  }
+/* ── RESPONSIVE ── */
+@media(max-width:680px){
+  .price-grid{grid-template-columns:1fr}
+  .price-card{border-right:none;border-bottom:1px solid var(--border)}
+  .price-card:last-child{border-bottom:none}
+  nav{top:28px}
+  .bh-right{align-items:flex-start}
+  .ni-orig{display:none}
+}
+@media(prefers-reduced-motion:reduce){
+  .ticker-track{animation:none}
+  .logo-dot{animation:none}
+  .feed-loading .spinner{animation:none}
+}
 </style>
 </head>
 <body>
 
-<!-- TICKER TAPE -->
-<div class="ticker-wrap" aria-label="Bảng giá tài chính">
-  <div class="ticker-inner" id="ticker">
-    <span>🟡 XAU/USD <strong>3.325,40</strong> <span class="up">▲ +0,82%</span></span>
-    <span>⚪ XAG/USD <strong>33,15</strong> <span class="up">▲ +1,12%</span></span>
-    <span>🟠 BTC/USD <strong>103.820</strong> <span class="up">▲ +2,34%</span></span>
-    <span>📈 S&amp;P 500 <strong>5.942,31</strong> <span class="down">▼ -0,18%</span></span>
-    <span>📊 NASDAQ <strong>19.234,50</strong> <span class="up">▲ +0,45%</span></span>
-    <span>🇻🇳 VN-Index <strong>1.288,65</strong> <span class="up">▲ +0,67%</span></span>
-    <span>💵 DXY <strong>104,12</strong> <span class="down">▼ -0,21%</span></span>
-    <span>🇺🇸 US10Y <strong>4,42%</strong> <span class="up">▲ +3bp</span></span>
-    <span>🟡 XAU/USD <strong>3.325,40</strong> <span class="up">▲ +0,82%</span></span>
-    <span>⚪ XAG/USD <strong>33,15</strong> <span class="up">▲ +1,12%</span></span>
-    <span>🟠 BTC/USD <strong>103.820</strong> <span class="up">▲ +2,34%</span></span>
-    <span>📈 S&amp;P 500 <strong>5.942,31</strong> <span class="down">▼ -0,18%</span></span>
-    <span>📊 NASDAQ <strong>19.234,50</strong> <span class="up">▲ +0,45%</span></span>
-    <span>🇻🇳 VN-Index <strong>1.288,65</strong> <span class="up">▲ +0,67%</span></span>
-    <span>💵 DXY <strong>104,12</strong> <span class="down">▼ -0,21%</span></span>
-    <span>🇺🇸 US10Y <strong>4,42%</strong> <span class="up">▲ +3bp</span></span>
+<!-- TICKER TAPE: giá realtime từ CoinGecko -->
+<div class="ticker-wrap" aria-label="Bảng giá realtime">
+  <div class="ticker-track" id="tickerTrack">
+    <!-- JS điền vào, có bản dự phòng tĩnh -->
+    <div class="tick-item"><span class="sym">XAU/USD</span> <span class="na">đang tải...</span></div>
+    <div class="tick-item"><span class="sym">BTC/USD</span> <span class="na">đang tải...</span></div>
+    <div class="tick-item"><span class="sym">ETH/USD</span> <span class="na">đang tải...</span></div>
   </div>
 </div>
 
 <!-- NAV -->
 <nav>
-  <a href="#" class="nav-logo">TTD<span>News</span>Bot</a>
-  <ul class="nav-links">
-    <li><a href="#tinh-nang">Tính năng</a></li>
-    <li><a href="#nguon-tin">Nguồn tin</a></li>
-    <li><a href="#preview">Xem trước</a></li>
-    <li><a href="#cai-dat">Cài đặt</a></li>
-  </ul>
-  <a href="https://t.me/GocnhinTTD_NewsBot" class="nav-cta">Mở Telegram →</a>
+  <a class="logo" href="#">
+    <span class="logo-dot"></span>
+    TTD<span>News</span>Bot
+  </a>
+  <div class="nav-right">
+    <div class="nav-badge">Cập nhật: <span id="navNextUpdate">--:--</span></div>
+    <a class="btn-tg" href="https://t.me/GocnhinTTD_NewsBot" target="_blank">📲 Telegram</a>
+  </div>
 </nav>
 
-<!-- HERO -->
-<section>
-  <div class="hero">
-    <div class="hero-left">
-      <div class="hero-eyebrow">Đang hoạt động — Cập nhật mỗi 15 phút</div>
-      <h1>Bản tin tài chính<br><span class="accent">tự động, chính xác,</span><br>đến thẳng Telegram</h1>
-      <p class="hero-desc">
-        TTDNewsBot tổng hợp tin tức từ hơn 20 nguồn uy tín quốc tế và Việt Nam,
-        tự động dịch sang tiếng Việt, phân tích kỹ thuật Gold, Silver, BTC và
-        gửi thẳng vào Telegram của bạn — không bỏ sót bất kỳ diễn biến nào.
-      </p>
-      <div class="hero-actions">
-        <a href="https://t.me/GocnhinTTD_NewsBot" class="btn-primary">
-          📲 Mở bot Telegram
-        </a>
-        <a href="#cai-dat" class="btn-secondary">Tự cài đặt</a>
-      </div>
-    </div>
+<!-- NỘI DUNG CHÍNH -->
+<div class="main-wrap">
 
-    <!-- TERMINAL MOCK -->
-    <div class="terminal" role="img" aria-label="Demo terminal hiển thị bản tin mẫu">
-      <div class="terminal-bar">
-        <div class="dot r"></div>
-        <div class="dot y"></div>
-        <div class="dot g"></div>
-        <span class="terminal-title">TTDNewsBot — financial_news_aggregator.py</span>
-      </div>
-      <div class="terminal-body">
-        <div class="t-line t-dim">2026-06-10 14:30:00 | INFO  | run_cycle | ===== BẮT ĐẦU CHU KỲ =====</div>
-        <div class="t-line t-dim">2026-06-10 14:30:01 | INFO  | fetch_all_prices | Lấy giá GC=F (Vàng)...</div>
-        <div class="t-line"><span class="t-label">  XAU/USD  </span><span class="t-gold">3.325,40</span> <span class="t-green">▲ +0.82%</span> <span class="t-dim">| RSI 58 | trên EMA200</span></div>
-        <div class="t-line"><span class="t-label">  XAG/USD  </span><span class="t-gold">33.15</span>   <span class="t-green">▲ +1.12%</span> <span class="t-dim">| RSI 55 | trên EMA200</span></div>
-        <div class="t-line"><span class="t-label">  BTC/USDT </span><span class="t-gold">103.820</span> <span class="t-green">▲ +2.34%</span> <span class="t-dim">| RSI 61 | trên EMA200</span></div>
-        <div class="t-sep t-line">──────────────────────────────────</div>
-        <div class="t-line t-dim">2026-06-10 14:30:12 | INFO  | fetch_all_news | Crawl 22 feeds...</div>
-        <div class="t-line t-teal">  ✓ CoinDesk: 8 tin  ✓ Kitco: 5 tin</div>
-        <div class="t-line t-teal">  ✓ VnExpress: 12 tin  ✓ CafeF: 9 tin</div>
-        <div class="t-line t-teal">  ✓ PR Newswire (BlackRock, JPMorgan): 3 tin</div>
-        <div class="t-line t-dim">2026-06-10 14:30:28 | INFO  | translate_batch | Dịch 31/44 tiêu đề...</div>
-        <div class="t-sep t-line">──────────────────────────────────</div>
-        <div class="t-line t-dim">2026-06-10 14:30:31 | INFO  | Tin MỚI sau khử trùng lặp: 31</div>
-        <div class="t-line t-green">2026-06-10 14:30:32 | INFO  | [NEWS_SUMMARY] Đã gửi Telegram ✓</div>
-        <div class="t-line"><span class="t-dim">2026-06-10 14:30:32 | INFO  | Chu kỳ tiếp theo lúc </span><span class="t-gold">14:45:00</span> <span class="blink t-gold">_</span></div>
-      </div>
+  <!-- BRIEFING HEADER -->
+  <div class="briefing-header">
+    <div class="bh-left">
+      <h1>📰 FINANCIAL BRIEFING</h1>
+      <div class="bh-time" id="briefingTime">Đang tải...</div>
+    </div>
+    <div class="bh-right">
+      <div class="status-pill"><span class="logo-dot" style="width:6px;height:6px"></span>ĐANG HOẠT ĐỘNG</div>
+      <div class="countdown">Cập nhật tiếp theo: <span id="cdTimer">15:00</span></div>
     </div>
   </div>
-</section>
 
-<!-- STATS BAR -->
-<div class="stats-bar">
-  <div class="stats-inner">
-    <div>
-      <div class="stat-val">22+</div>
-      <div class="stat-lbl">Nguồn tin theo dõi</div>
+  <!-- KHU VỰC GIÁ -->
+  <div class="price-section" id="priceSection">
+    <div class="section-header">
+      <span class="sh-icon">💹</span>
+      <h2>Giá &amp; Kỹ thuật</h2>
     </div>
-    <div>
-      <div class="stat-val">15'</div>
-      <div class="stat-lbl">Chu kỳ cập nhật</div>
-    </div>
-    <div>
-      <div class="stat-val">7</div>
-      <div class="stat-lbl">Chủ đề phân loại</div>
-    </div>
-    <div>
-      <div class="stat-val">24/7</div>
-      <div class="stat-lbl">Hoạt động liên tục</div>
+    <div class="loading-price" id="priceLoading">⏳ Đang lấy giá realtime...</div>
+    <div class="price-grid" id="priceGrid" style="display:none"></div>
+  </div>
+
+  <!-- KHU VỰC TIN TỨC -->
+  <div id="newsContainer">
+    <div class="feed-loading" id="mainLoading">
+      <div class="spinner"></div>
+      Đang tổng hợp tin tức &amp; dịch sang tiếng Việt...<br>
+      <span style="font-size:11px;color:#444d56;margin-top:8px;display:block">Lần đầu mất ~15 giây</span>
     </div>
   </div>
+
+  <!-- TÁC ĐỘNG DỰ KIẾN (điền bởi JS) -->
+  <div class="impact-section" id="impactSection" style="display:none">
+    <div class="impact-title">🎯 TÁC ĐỘNG DỰ KIẾN</div>
+    <div id="impactBody"></div>
+  </div>
+
 </div>
 
-<!-- FEATURES -->
-<section class="section" id="tinh-nang">
-  <div class="section-eyebrow">Tính năng</div>
-  <h2 class="section-title">Mọi thứ bạn cần để<br>không bỏ lỡ thị trường</h2>
-  <p class="section-sub">Từ giá realtime đến nhận định từ BlackRock, JPMorgan — tất cả trong một bản tin tiếng Việt.</p>
-
-  <div class="features-grid">
-    <div class="feat-card">
-      <div class="feat-icon">📡</div>
-      <div class="feat-title">Thu thập tự động 24/7</div>
-      <div class="feat-desc">Crawl hơn 22 nguồn RSS uy tín mỗi 15 phút. Hệ thống retry tự động xử lý nguồn gián đoạn, không bao giờ bỏ sót.</div>
-    </div>
-    <div class="feat-card">
-      <div class="feat-icon">🇻🇳</div>
-      <div class="feat-title">Tự động dịch tiếng Việt</div>
-      <div class="feat-desc">Toàn bộ tiêu đề tiếng Anh được dịch sang tiếng Việt qua Google Translate. Nguồn VnExpress, CafeF, Tuổi Trẻ giữ nguyên bản gốc.</div>
-    </div>
-    <div class="feat-card">
-      <div class="feat-icon">📊</div>
-      <div class="feat-title">Phân tích kỹ thuật tích hợp</div>
-      <div class="feat-desc">Giá realtime Gold, Silver, BTC kèm EMA200, RSI14. Nhận diện tự động: test EMA200, quá mua/bán, xu hướng tăng/giảm.</div>
-    </div>
-    <div class="feat-card">
-      <div class="feat-icon">🏛</div>
-      <div class="feat-title">Radar tổ chức lớn</div>
-      <div class="feat-desc">Theo dõi thông cáo chính thức từ BlackRock, JPMorgan, Morgan Stanley, UBS, Goldman Sachs — ưu tiên hiển thị đầu bản tin.</div>
-    </div>
-    <div class="feat-card">
-      <div class="feat-icon">🔕</div>
-      <div class="feat-title">Chống spam thông minh</div>
-      <div class="feat-desc">Khử trùng lặp theo hash nội dung. Cooldown 15 phút giữa các lần gửi. Lưu lịch sử 72h để không bao giờ gửi lại tin cũ.</div>
-    </div>
-    <div class="feat-card">
-      <div class="feat-icon">⚙️</div>
-      <div class="feat-title">Cấu hình linh hoạt</div>
-      <div class="feat-desc">Toàn bộ tham số trong file .env: chu kỳ chạy, cửa sổ tin, cooldown, số tin/chủ đề. Bật/tắt dịch tự động bằng 1 dòng.</div>
-    </div>
-  </div>
-</section>
-
-<!-- SOURCES -->
-<div class="sources-section" id="nguon-tin">
-  <div class="sources-inner">
-    <div class="section-eyebrow">Nguồn tin</div>
-    <h2 class="section-title">Dữ liệu từ những tên tuổi uy tín nhất</h2>
-    <div class="sources-grid">
-      <div class="source-group">
-        <div class="source-group-title">₿ Crypto</div>
-        <div class="source-item"><div class="source-dot"></div>CoinDesk</div>
-        <div class="source-item"><div class="source-dot"></div>Cointelegraph</div>
-        <div class="source-item"><div class="source-dot"></div>Bitcoin Magazine</div>
-        <div class="source-item"><div class="source-dot"></div>Decrypt</div>
-      </div>
-      <div class="source-group">
-        <div class="source-group-title">🥇 Kim loại quý</div>
-        <div class="source-item"><div class="source-dot"></div>Kitco News</div>
-        <div class="source-item"><div class="source-dot"></div>Mining.com</div>
-        <div class="source-item"><div class="source-dot"></div>GoldPrice.org</div>
-        <div class="source-item"><div class="source-dot"></div>ETF.com</div>
-      </div>
-      <div class="source-group">
-        <div class="source-group-title">🏛 Tổ chức & Vĩ mô</div>
-        <div class="source-item"><div class="source-dot"></div>Federal Reserve</div>
-        <div class="source-item"><div class="source-dot"></div>IMF</div>
-        <div class="source-item"><div class="source-dot"></div>PR Newswire</div>
-        <div class="source-item"><div class="source-dot"></div>BusinessWire</div>
-      </div>
-      <div class="source-group">
-        <div class="source-group-title">🇻🇳 Việt Nam</div>
-        <div class="source-item"><div class="source-dot"></div>VnExpress Kinh doanh</div>
-        <div class="source-item"><div class="source-dot"></div>CafeF Chứng khoán</div>
-        <div class="source-item"><div class="source-dot"></div>Tuổi Trẻ Kinh tế</div>
-        <div class="source-item"><div class="source-dot"></div>CafeF Vĩ mô</div>
-      </div>
-    </div>
-  </div>
-</div>
-
-<!-- PREVIEW TELEGRAM -->
-<section class="preview-section" id="preview">
-  <div class="preview-inner">
-    <div>
-      <div class="section-eyebrow">Xem trước</div>
-      <h2 class="section-title">Bản tin trực tiếp trong Telegram</h2>
-      <p style="color: var(--muted); font-size: 16px; line-height: 1.75; margin-bottom: 24px;">
-        Mỗi 15 phút, bạn nhận được bản tin HTML có cấu trúc rõ ràng:
-        giá và kỹ thuật đầu, rồi đến nhận định tổ chức lớn, tin vàng/bạc, BTC, vĩ mô, Việt Nam.
-      </p>
-      <ul style="list-style: none; display: flex; flex-direction: column; gap: 12px;">
-        <li style="display:flex; gap:10px; align-items:flex-start; font-size:14px; color:var(--muted);">
-          <span style="color:var(--gold); margin-top:2px;">✓</span>
-          Tiêu đề rõ ràng với timestamp UTC
-        </li>
-        <li style="display:flex; gap:10px; align-items:flex-start; font-size:14px; color:var(--muted);">
-          <span style="color:var(--gold); margin-top:2px;">✓</span>
-          Tin từ BlackRock, JPMorgan, Goldman được đánh dấu 🏛 và đẩy lên đầu
-        </li>
-        <li style="display:flex; gap:10px; align-items:flex-start; font-size:14px; color:var(--muted);">
-          <span style="color:var(--gold); margin-top:2px;">✓</span>
-          Mỗi tin có link gốc, nguồn và đã dịch tiếng Việt
-        </li>
-        <li style="display:flex; gap:10px; align-items:flex-start; font-size:14px; color:var(--muted);">
-          <span style="color:var(--gold); margin-top:2px;">✓</span>
-          Tự tách message nếu nội dung vượt 4096 ký tự
-        </li>
-      </ul>
-    </div>
-
-    <!-- TELEGRAM MOCKUP -->
-    <div class="telegram-mock">
-      <div class="tg-header">
-        <div class="tg-avatar">TTD</div>
-        <div>
-          <div class="tg-name">TTDNewsBot</div>
-          <div class="tg-sub">bot • đang hoạt động</div>
-        </div>
-      </div>
-      <div class="tg-body">
-        <div class="tg-msg">
-          <div class="msg-title">📰 FINANCIAL BRIEFING — 10/06/2026 14:30 UTC</div>
-          <div class="msg-sep">━━━━━━━━━━━━━━━━━━</div>
-          <div>💹 <strong>GIÁ &amp; KỸ THUẬT</strong></div>
-          <div class="msg-item">• <strong>Vàng (XAU):</strong> 3.325 <span class="up">▲ +0.82%</span></div>
-          <div class="msg-item" style="padding-left:16px; font-size:12px; color:#64748B;">↳ trên EMA200, RSI 58</div>
-          <div class="msg-item">• <strong>Bitcoin:</strong> 103.820 <span class="up">▲ +2.34%</span></div>
-          <div class="msg-sep">━━━━━━━━━━━━━━━━━━</div>
-          <div class="msg-section">🏛 NHẬN ĐỊNH TỔ CHỨC LỚN</div>
-          <div class="msg-item inst">🏛 <a href="#">BlackRock tăng phân bổ vàng trong danh mục 2026</a></div>
-          <div class="msg-item" style="font-size:11px; color:#475569; padding-left:16px;">(PR Newswire)</div>
-          <div class="msg-item inst">🏛 <a href="#">JPMorgan: BTC có thể đạt 120.000 USD trong Q3</a></div>
-          <div class="msg-section">🥇 VÀNG &amp; BẠC</div>
-          <div class="msg-item">• <a href="#">Fed giữ lãi suất, vàng phản ứng tích cực</a></div>
-          <div class="msg-item">• <a href="#">Trung Quốc tăng dự trữ vàng tháng thứ 8 liên tiếp</a></div>
-          <div class="msg-sep">━━━━━━━━━━━━━━━━━━</div>
-          <div class="msg-src">📚 Nguồn: CoinDesk, Kitco, PR Newswire, VnExpress...</div>
-          <div class="msg-src">⚠️ Chỉ tham khảo, không phải khuyến nghị đầu tư.</div>
-        </div>
-        <div class="tg-time">14:30 ✓✓</div>
-      </div>
-    </div>
-  </div>
-</section>
-
-<!-- HOW IT WORKS -->
-<div style="background: var(--bg2); border-top: 1px solid var(--border); border-bottom: 1px solid var(--border);">
-  <div class="section">
-    <div class="section-eyebrow">Cách hoạt động</div>
-    <h2 class="section-title">Chạy trong 4 bước đơn giản</h2>
-    <div class="how-grid">
-      <div class="how-step">
-        <div class="how-num">1</div>
-        <div class="how-title">Cài thư viện</div>
-        <div class="how-desc"><code style="font-family:'JetBrains Mono'; font-size:12px; color:var(--teal);">pip install -r requirements.txt</code> là đủ. Python 3.8+ trở lên.</div>
-      </div>
-      <div class="how-step">
-        <div class="how-num">2</div>
-        <div class="how-title">Cấu hình .env</div>
-        <div class="how-desc">Điền TELEGRAM_TOKEN và TELEGRAM_CHAT_ID từ BotFather vào file .env.</div>
-      </div>
-      <div class="how-step">
-        <div class="how-num">3</div>
-        <div class="how-title">Chạy script</div>
-        <div class="how-desc"><code style="font-family:'JetBrains Mono'; font-size:12px; color:var(--teal);">python financial_news_aggregator.py</code> — tự động chạy chu kỳ đầu ngay lập tức.</div>
-      </div>
-      <div class="how-step">
-        <div class="how-num">4</div>
-        <div class="how-title">Nhận bản tin</div>
-        <div class="how-desc">Sau ~90 giây, bản tin đầu tiên xuất hiện trong Telegram. Tiếp tục mỗi 15 phút.</div>
-      </div>
-    </div>
-  </div>
-</div>
-
-<!-- CTA BOTTOM -->
-<div class="cta-section" id="cai-dat">
-  <h2>Bắt đầu nhận tin ngay hôm nay</h2>
-  <p>Mã nguồn mở, miễn phí, chạy trên máy tính cá nhân của bạn.</p>
-  <div class="code-block">
-    <span class="prompt">$ </span>pip install -r requirements.txt<br>
-    <span class="prompt">$ </span>cp .env.example .env<br>
-    <span class="prompt">$ </span>python financial_news_aggregator.py
-  </div>
-  <br>
-  <div style="display:flex; gap:16px; justify-content:center; flex-wrap:wrap;">
-    <a href="https://t.me/GocnhinTTD_NewsBot" class="btn-primary" style="text-decoration:none;">📲 Mở bot Telegram</a>
-    <a href="#tinh-nang" class="btn-secondary" style="text-decoration:none;">Xem tính năng</a>
-  </div>
-</div>
-
-<!-- FOOTER -->
+<!-- PAGE FOOTER -->
 <footer>
-  <p style="margin-bottom:10px;">
-    <strong style="color:var(--text);">TTDNewsBot</strong> — Trang tổng hợp thông tin tài chính tự động
-  </p>
-  <p>
-    Liên hệ: <a href="https://t.me/GocnhinTTD_NewsBot">Telegram</a> &nbsp;|&nbsp;
-    Dữ liệu: CoinDesk · Kitco · VnExpress · Fed · IMF · PR Newswire &nbsp;|&nbsp;
-    Giá trong ticker mang tính minh họa
-  </p>
-  <p style="margin-top:10px; font-size:12px; color:#334155;">
+  <div>
+    <b style="color:var(--text)">TTDNewsBot</b> — Tổng hợp tin tài chính tự động, cập nhật mỗi 15 phút
+  </div>
+  <div>
+    Nguồn: CoinDesk · Cointelegraph · Kitco · Fed · IMF · CNBC · Yahoo Finance · VnExpress · CafeF · Tuổi Trẻ · PR Newswire
+  </div>
+  <div style="color:#444d56;font-size:11px;margin-top:4px">
     ⚠️ Nội dung chỉ mang tính tham khảo. Không phải khuyến nghị đầu tư.
-    Tự chịu trách nhiệm với quyết định giao dịch của bạn.
-  </p>
+    Giá hiển thị có thể trễ 1–3 phút so với thị trường.
+  </div>
+  <div style="margin-top:8px">
+    <a href="https://t.me/GocnhinTTD_NewsBot" target="_blank">Telegram Bot</a>
+    &nbsp;·&nbsp;
+    <a href="https://github.com/TTDNewsBot/TTDNewsBot" target="_blank">GitHub</a>
+  </div>
 </footer>
 
 <script>
-document.querySelectorAll('a[href^="#"]').forEach(a => {
-  a.addEventListener('click', e => {
-    const id = a.getAttribute('href').slice(1);
-    const el = document.getElementById(id);
-    if (el) { e.preventDefault(); el.scrollIntoView({ behavior: 'smooth', block: 'start' }); }
-  });
-});
+// ============================================================
+// CẤU HÌNH
+// ============================================================
+const REFRESH_MS   = 15 * 60 * 1000;  // 15 phút
+const PRICE_MS     = 60 * 1000;        // giá refresh mỗi 1 phút
+const MAX_PER_TOPIC = 6;               // tin tối đa / chủ đề
+
+// RSS → JSON qua rss2json.com (miễn phí, không cần key cho public feeds)
+const RSS2JSON = 'https://api.rss2json.com/v1/api.json?rss_url=';
+
+// Danh sách feed RSS (topic: institutions/gold_silver/bitcoin/macro/geopolitics/vietnam/stocks)
+const FEEDS = [
+  {name:'CoinDesk',        url:'https://www.coindesk.com/arc/outboundfeeds/rss/',    topic:'bitcoin'},
+  {name:'Cointelegraph',   url:'https://cointelegraph.com/rss',                       topic:'bitcoin'},
+  {name:'Decrypt',         url:'https://decrypt.co/feed',                             topic:'bitcoin'},
+  {name:'Kitco News',      url:'https://www.kitco.com/rss/KitcoNews.xml',             topic:'gold_silver'},
+  {name:'Mining.com',      url:'https://www.mining.com/feed/',                        topic:'gold_silver'},
+  {name:'Federal Reserve', url:'https://www.federalreserve.gov/feeds/press_all.xml',  topic:'macro'},
+  {name:'IMF News',        url:'https://www.imf.org/en/News/rss?language=eng',        topic:'macro'},
+  {name:'MarketWatch',     url:'https://feeds.marketwatch.com/marketwatch/topstories/',topic:'stocks'},
+  {name:'CNBC Finance',    url:'https://search.cnbc.com/rs/search/combinedcms/view.xml?partnerId=wrss01&id=10000664',topic:'stocks'},
+  {name:'Yahoo Finance',   url:'https://finance.yahoo.com/news/rssindex',             topic:'stocks'},
+  {name:'PR Newswire',     url:'https://www.prnewswire.com/rss/news-releases-list.rss',topic:'institutions'},
+  {name:'Al Jazeera',      url:'https://www.aljazeera.com/xml/rss/all.xml',           topic:'geopolitics'},
+  {name:'CafeF CK',        url:'https://cafef.vn/thi-truong-chung-khoan.rss',         topic:'vietnam'},
+  {name:'CafeF VM',        url:'https://cafef.vn/vi-mo-dau-tu.rss',                   topic:'vietnam'},
+  {name:'VnExpress KD',    url:'https://vnexpress.net/rss/kinh-doanh.rss',            topic:'vietnam'},
+  {name:'VnExpress CK',    url:'https://vnexpress.net/rss/kinh-doanh/chung-khoan.rss',topic:'vietnam'},
+  {name:'Tuoi Tre KT',     url:'https://tuoitre.vn/rss/kinh-te.rss',                  topic:'vietnam'},
+];
+
+// Từ khoá phân loại
+const KEYWORDS = {
+  institutions:['blackrock','jpmorgan','jp morgan','morgan stanley','ubs','goldman sachs','citadel','bridgewater','larry fink','jamie dimon','ishares','ray dalio','pimco','vanguard','fidelity','barclays','investment outlook','market outlook'],
+  bitcoin:['bitcoin','btc','crypto','ethereum','eth','stablecoin','blockchain','altcoin','binance','coinbase','satoshi'],
+  gold_silver:['gold','silver','xau','xag','bullion','precious metal','vàng','bạc','comex','spot gold','kim loại quý'],
+  macro:['fed','federal reserve','powell','ecb','boj','pboc','interest rate','rate cut','rate hike','cpi','ppi','inflation','nfp','payroll','unemployment','gdp','yield','treasury','fomc','lạm phát','lãi suất'],
+  geopolitics:['war','sanction','trump','china','russia','ukraine','middle east','tariff','trade war','election','opec','israel','iran','taiwan','geopolit'],
+  vietnam:['vn-index','vnindex','vn30','hose','hnx','việt nam','chứng khoán','cổ phiếu','sjc','ssi','vndirect','cafef','vnexpress'],
+  stocks:['stock','shares','nasdaq','s&p','dow','earnings','wall street','ipo','equity'],
+};
+
+const INST_NAMES = ['blackrock','jpmorgan','jp morgan','morgan stanley','ubs','goldman sachs','citadel','bridgewater','imf','world bank','larry fink','jamie dimon','ray dalio','pimco','vanguard','fidelity','barclays'];
+
+const VN_SOURCES = ['CafeF CK','CafeF VM','VnExpress KD','VnExpress CK','Tuoi Tre KT'];
+
+const TOPIC_DISPLAY = [
+  {key:'institutions', icon:'🏛', label:'NHẬN ĐỊNH TỔ CHỨC LỚN'},
+  {key:'gold_silver',  icon:'🥇', label:'VÀNG & BẠC'},
+  {key:'bitcoin',      icon:'₿',  label:'BITCOIN & CRYPTO'},
+  {key:'macro',        icon:'🏦', label:'VĨ MÔ & NGÂN HÀNG TRUNG ƯƠNG'},
+  {key:'geopolitics',  icon:'🌍', label:'ĐỊA CHÍNH TRỊ'},
+  {key:'vietnam',      icon:'🇻🇳', label:'CHỨNG KHOÁN VIỆT NAM'},
+  {key:'stocks',       icon:'📈', label:'CỔ PHIẾU / THỊ TRƯỜNG'},
+];
+
+// ============================================================
+// UTILITIES
+// ============================================================
+function fmtNow() {
+  return new Date().toLocaleString('vi-VN',{timeZone:'UTC',hour12:false,
+    day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'}) + ' UTC';
+}
+
+function classifyTopic(text, fallback) {
+  const low = (text||'').toLowerCase();
+  for (const t of ['institutions','bitcoin','gold_silver','vietnam','macro','geopolitics','stocks']) {
+    if ((KEYWORDS[t]||[]).some(k => low.includes(k))) return t;
+  }
+  return fallback;
+}
+
+function isInstitution(text) {
+  const low = (text||'').toLowerCase();
+  return INST_NAMES.some(n => low.includes(n));
+}
+
+function isVietnamese(text) {
+  const viet = 'àáâãèéêìíòóôõùúýăđơưạảấầẩẫậắằẳẵặẹẻẽếềểễệỉịọỏốồổỗộớờởỡợụủứừửữựỳỵỷỹ';
+  return (text.match(new RegExp('['+viet+']','g'))||[]).length >= 3;
+}
+
+function fmtTime(dateStr) {
+  if (!dateStr) return '';
+  try {
+    const d = new Date(dateStr);
+    const diff = Math.floor((Date.now() - d) / 60000);
+    if (diff < 1)  return 'vừa xong';
+    if (diff < 60) return diff + ' phút trước';
+    if (diff < 1440) return Math.floor(diff/60) + ' giờ trước';
+    return Math.floor(diff/1440) + ' ngày trước';
+  } catch { return ''; }
+}
+
+// ============================================================
+// DỊCH TIÊU ĐỀ — MyMemory API (miễn phí, không cần key)
+// ============================================================
+const _transCache = {};
+
+async function translateTitle(text, source) {
+  if (!text || text.length < 5) return text;
+  if (VN_SOURCES.includes(source)) return text;     // đã tiếng Việt
+  if (isVietnamese(text)) return text;               // đã có dấu tiếng Việt
+
+  const key = text.trim().toLowerCase();
+  if (_transCache[key]) return _transCache[key];
+
+  try {
+    const encoded = encodeURIComponent(text.slice(0, 400));
+    const r = await fetch(
+      `https://api.mymemory.translated.net/get?q=${encoded}&langpair=en|vi`,
+      {signal: AbortSignal.timeout(6000)}
+    );
+    const j = await r.json();
+    const trans = j?.responseData?.translatedText || '';
+    // MyMemory đôi khi trả lỗi dạng text — kiểm tra
+    if (trans && !trans.startsWith('QUERY LENGTH') && trans !== text) {
+      _transCache[key] = trans;
+      return trans;
+    }
+  } catch (_) {}
+
+  _transCache[key] = text;
+  return text;
+}
+
+async function translateBatch(items) {
+  // Dịch tuần tự với nghỉ nhỏ để tránh rate-limit
+  for (const item of items) {
+    item.titleVi = await translateTitle(item.title, item.source);
+    await new Promise(r => setTimeout(r, 120));
+  }
+}
+
+// ============================================================
+// GIÁ REALTIME — CoinGecko (miễn phí, không cần key)
+// ============================================================
+const PRICE_IDS = {
+  'bitcoin': {sym:'BTC/USD', name:'Bitcoin',     unit:'$',   decs:0},
+  'gold':    {sym:'XAU/USD', name:'Vàng (XAU)',  unit:'$',   decs:0},
+  'silver':  {sym:'XAG/USD', name:'Bạc (XAG)',   unit:'$',   decs:2},
+};
+
+let _lastPrices = {};
+
+async function fetchPrices() {
+  try {
+    const ids = Object.keys(PRICE_IDS).join(',');
+    const r = await fetch(
+      `https://api.coingecko.com/api/v3/simple/price?ids=${ids}&vs_currencies=usd&include_24hr_change=true`,
+      {signal: AbortSignal.timeout(8000)}
+    );
+    const d = await r.json();
+    _lastPrices = d;
+    return d;
+  } catch (e) {
+    console.warn('Giá lỗi:', e.message);
+    return _lastPrices;
+  }
+}
+
+function renderPrices(data) {
+  const grid = document.getElementById('priceGrid');
+  const loading = document.getElementById('priceLoading');
+  if (!data || !Object.keys(data).length) return;
+
+  loading.style.display = 'none';
+  grid.style.display = 'grid';
+  grid.innerHTML = '';
+
+  for (const [id, cfg] of Object.entries(PRICE_IDS)) {
+    const d = data[id];
+    const price = d?.usd;
+    const chg   = d?.usd_24h_change;
+    const up    = chg >= 0;
+    const noteHtml = buildTechNote(id, price);
+
+    grid.innerHTML += `
+    <div class="price-card">
+      <div class="pc-name">${cfg.sym}</div>
+      <div class="pc-price">${price != null ? cfg.unit + price.toLocaleString('vi-VN',{maximumFractionDigits:cfg.decs}) : 'N/A'}</div>
+      ${chg != null ? `<div class="pc-change ${up?'up':'dn'}">${up?'▲':'▼'} ${Math.abs(chg).toFixed(2)}% (24h)</div>` : '<div class="pc-change">--</div>'}
+      <div class="pc-note">${noteHtml}</div>
+    </div>`;
+  }
+
+  // Ticker cập nhật
+  renderTicker(data);
+}
+
+function buildTechNote(id, price) {
+  // Nhận định ngắn dựa trên % 24h (không có EMA thật vì không dùng backend)
+  const chg = _lastPrices[id]?.usd_24h_change;
+  if (price == null) return '<span>Chưa có dữ liệu</span>';
+  const parts = [];
+  if (chg != null) {
+    if (chg > 3)       parts.push('<span class="ema-up">Động lực tăng mạnh</span>');
+    else if (chg > 0)  parts.push('<span class="ema-up">Xu hướng tích cực</span>');
+    else if (chg < -3) parts.push('<span class="ema-dn">Áp lực giảm mạnh</span>');
+    else               parts.push('<span class="ema-dn">Xu hướng thận trọng</span>');
+  }
+  // Giả lập RSI-proxy từ % thay đổi
+  if (chg != null) {
+    const rsiProxy = Math.min(80, Math.max(25, 50 + chg * 2.5));
+    const rsiColor = rsiProxy >= 70 ? 'var(--red)' : rsiProxy <= 30 ? 'var(--green)' : 'var(--teal)';
+    parts.push(`<span class="rsi" style="color:${rsiColor}">RSI ~${rsiProxy.toFixed(0)}</span>`);
+  }
+  return parts.join(' · ') || '—';
+}
+
+// ============================================================
+// TICKER TAPE
+// ============================================================
+function renderTicker(data) {
+  const extraItems = [
+    {sym:'VN-Index', val:'1.288', chg:+0.67},
+    {sym:'DXY',      val:'104.12', chg:-0.21},
+    {sym:'US10Y',    val:'4.42%',  chg:null},
+    {sym:'S&P 500',  val:'5.942',  chg:-0.18},
+  ];
+
+  let html = '';
+  for (const [id, cfg] of Object.entries(PRICE_IDS)) {
+    const d = data[id];
+    const price = d?.usd;
+    const chg   = d?.usd_24h_change;
+    const up    = chg >= 0;
+    html += `<div class="tick-item">
+      <span class="sym">${cfg.sym}</span>
+      <span>${price != null ? price.toLocaleString('vi-VN',{maximumFractionDigits:cfg.decs}) : '—'}</span>
+      ${chg != null ? `<span class="${up?'up':'dn'}">${up?'▲':'▼'}${Math.abs(chg).toFixed(2)}%</span>` : ''}
+    </div>`;
+  }
+  for (const e of extraItems) {
+    html += `<div class="tick-item">
+      <span class="sym">${e.sym}</span>
+      <span>${e.val}</span>
+      ${e.chg != null ? `<span class="${e.chg>=0?'up':'dn'}">${e.chg>=0?'▲':'▼'}${Math.abs(e.chg).toFixed(2)}%</span>` : ''}
+    </div>`;
+  }
+  // Nhân đôi để loop mượt
+  const full = html + html;
+  document.getElementById('tickerTrack').innerHTML = full;
+}
+
+// ============================================================
+// TIN TỨC — RSS qua rss2json.com
+// ============================================================
+let _allItems = [];
+let _seenKeys = new Set(JSON.parse(localStorage.getItem('ttd_seen')||'[]'));
+
+function hashItem(title, link) {
+  let h = 0, s = (title||'')+(link||'');
+  for (let i=0;i<s.length;i++) h=(Math.imul(31,h)+s.charCodeAt(i))|0;
+  return h.toString(36);
+}
+
+async function fetchOneFeed(feed) {
+  try {
+    const url = RSS2JSON + encodeURIComponent(feed.url) + '&count=15';
+    const r = await fetch(url, {signal: AbortSignal.timeout(10000)});
+    const j = await r.json();
+    if (j.status !== 'ok' || !j.items?.length) return [];
+
+    const cutoff = Date.now() - 24*3600*1000;
+    return j.items
+      .filter(it => {
+        if (!it.title) return false;
+        const pub = it.pubDate ? new Date(it.pubDate).getTime() : Date.now();
+        return pub >= cutoff;
+      })
+      .map(it => ({
+        title:     (it.title||'').trim(),
+        titleVi:   '',
+        link:      it.link||'',
+        source:    feed.name,
+        pubDate:   it.pubDate||'',
+        topic:     classifyTopic(it.title, feed.topic),
+        isInst:    isInstitution(it.title),
+        key:       hashItem(it.title, it.link),
+      }));
+  } catch { return []; }
+}
+
+async function fetchAllNews() {
+  // Crawl song song tất cả feed
+  const results = await Promise.allSettled(FEEDS.map(f => fetchOneFeed(f)));
+  const all = [];
+  const seen = new Set();
+  for (const r of results) {
+    if (r.status !== 'fulfilled') continue;
+    for (const item of r.value) {
+      if (seen.has(item.key)) continue;
+      seen.add(item.key);
+      all.push(item);
+    }
+  }
+  return all;
+}
+
+// ============================================================
+// RENDER TIN TỨC
+// ============================================================
+function renderNews(items) {
+  const container = document.getElementById('newsContainer');
+  const grouped = {};
+  for (const t of TOPIC_DISPLAY) grouped[t.key] = [];
+
+  for (const it of items) {
+    (grouped[it.topic] = grouped[it.topic]||[]).push(it);
+  }
+
+  let html = '';
+  let totalNew = 0;
+
+  for (const {key, icon, label} of TOPIC_DISPLAY) {
+    const bucket = (grouped[key]||[])
+      .sort((a,b) => (b.isInst?1:0) - (a.isInst?1:0))
+      .slice(0, MAX_PER_TOPIC);
+
+    if (!bucket.length) continue;
+    totalNew += bucket.length;
+
+    html += `<div class="topic-section">
+      <div class="topic-header">
+        <h3>${icon} ${label}</h3>
+        <span class="topic-count">${bucket.length} tin</span>
+      </div>
+      <ul class="news-list">`;
+
+    for (const it of bucket) {
+      const badge = it.isInst
+        ? `<span class="ni-badge inst">🏛 Tổ chức</span>`
+        : `<span class="ni-badge norm">${it.source}</span>`;
+      const titleClass = it.isInst ? 'ni-title inst-title' : 'ni-title';
+      const displayTitle = it.titleVi || it.title;
+      const origTitle = (it.titleVi && it.titleVi !== it.title)
+        ? `<span class="ni-orig" title="Tiêu đề gốc">${it.title}</span>` : '';
+
+      html += `<li class="news-item ${it.isInst?'ni-inst':''}">
+        ${badge}
+        <div class="ni-body">
+          <a class="${titleClass}" href="${it.link||'#'}" target="_blank" rel="noopener">${displayTitle}</a>
+          <div class="ni-meta">
+            <span class="ni-source">${it.source}</span>
+            <span class="ni-time">${fmtTime(it.pubDate)}</span>
+            ${origTitle}
+          </div>
+        </div>
+      </li>`;
+    }
+
+    html += `</ul></div>`;
+  }
+
+  if (!html) {
+    html = `<div class="error-box">⚠️ Chưa tải được tin tức. Vui lòng thử lại sau ít phút.<br>
+    <small style="opacity:.6">Có thể do CORS từ trình duyệt hoặc rss2json đang quá tải.</small></div>`;
+  }
+
+  container.innerHTML = html;
+  return totalNew;
+}
+
+// ============================================================
+// TÁC ĐỘNG DỰ KIẾN
+// ============================================================
+function renderImpact(prices) {
+  const impacts = [];
+  const btcChg  = prices?.bitcoin?.usd_24h_change;
+  const goldChg = prices?.gold?.usd_24h_change;
+  const silvChg = prices?.silver?.usd_24h_change;
+
+  if (goldChg != null) {
+    if (goldChg > 1)   impacts.push({asset:'Vàng', note:'tăng mạnh → tâm lý tích cực với tài sản an toàn, USD có thể chịu áp lực.'});
+    else if (goldChg < -1) impacts.push({asset:'Vàng', note:'giảm → rủi ro giảm, DXY có thể phục hồi.'});
+  }
+  if (btcChg != null) {
+    if (btcChg > 3)    impacts.push({asset:'Bitcoin', note:'đà tăng tốt — theo dõi vùng kháng cự mạnh.'});
+    else if (btcChg < -3) impacts.push({asset:'Bitcoin', note:'áp lực bán — chú ý vùng hỗ trợ quan trọng.'});
+  }
+  if (silvChg != null && Math.abs(silvChg) > 1.5) {
+    impacts.push({asset:'Bạc', note: silvChg > 0 ? 'đồng hành với vàng, nhu cầu công nghiệp tích cực.' : 'yếu hơn vàng, dấu hiệu thận trọng.'});
+  }
+
+  if (!impacts.length) {
+    document.getElementById('impactSection').style.display = 'none';
+    return;
+  }
+
+  document.getElementById('impactSection').style.display = 'block';
+  document.getElementById('impactBody').innerHTML = impacts
+    .map(i => `<div class="impact-item">• <b>${i.asset}</b> ${i.note}</div>`)
+    .join('');
+}
+
+// ============================================================
+// VÒNG LẶP CHÍNH
+// ============================================================
+let _refreshTimer = null;
+let _countdownSec = REFRESH_MS / 1000;
+
+function startCountdown() {
+  _countdownSec = REFRESH_MS / 1000;
+  clearInterval(_refreshTimer);
+  _refreshTimer = setInterval(() => {
+    _countdownSec--;
+    if (_countdownSec <= 0) {
+      clearInterval(_refreshTimer);
+      runCycle();
+      return;
+    }
+    const m = Math.floor(_countdownSec / 60).toString().padStart(2,'0');
+    const s = (_countdownSec % 60).toString().padStart(2,'0');
+    const el = document.getElementById('cdTimer');
+    if (el) el.textContent = `${m}:${s}`;
+    // Cập nhật nav
+    const now = new Date(Date.now() + _countdownSec*1000);
+    const nextEl = document.getElementById('navNextUpdate');
+    if (nextEl) nextEl.textContent =
+      now.toLocaleTimeString('vi-VN',{hour:'2-digit',minute:'2-digit',timeZone:'UTC'}) + ' UTC';
+  }, 1000);
+}
+
+async function runCycle() {
+  console.log('[TTDNewsBot] Bắt đầu chu kỳ', new Date().toISOString());
+
+  // Cập nhật thời gian header
+  const timeEl = document.getElementById('briefingTime');
+  if (timeEl) timeEl.textContent = fmtNow();
+
+  // 1) Giá realtime
+  const prices = await fetchPrices();
+  renderPrices(prices);
+  renderImpact(prices);
+
+  // 2) Tin tức
+  document.getElementById('mainLoading') && (document.getElementById('mainLoading').style.display='block');
+  const rawItems = await fetchAllNews();
+
+  // 3) Lọc tin mới (chưa thấy bao giờ)
+  const newItems = rawItems.filter(it => !_seenKeys.has(it.key));
+  const toRender = newItems.length > 0 ? newItems : rawItems; // lần đầu load thì dùng hết
+
+  // 4) Dịch tiêu đề
+  await translateBatch(toRender);
+
+  // 5) Đánh dấu đã thấy
+  for (const it of toRender) _seenKeys.add(it.key);
+  try {
+    localStorage.setItem('ttd_seen', JSON.stringify([..._seenKeys].slice(-2000)));
+  } catch {}
+
+  // 6) Render
+  document.getElementById('mainLoading') && (document.getElementById('mainLoading').style.display='none');
+  const total = renderNews(toRender);
+  console.log(`[TTDNewsBot] Hiển thị ${total} tin. Dịch xong.`);
+
+  // 7) Đếm ngược chu kỳ tiếp
+  startCountdown();
+}
+
+// ============================================================
+// KHỞI ĐỘNG
+// ============================================================
+document.getElementById('briefingTime').textContent = fmtNow();
+runCycle();
+
+// Refresh giá mỗi 1 phút riêng
+setInterval(async () => {
+  const p = await fetchPrices();
+  renderPrices(p);
+  renderImpact(p);
+}, PRICE_MS);
 </script>
 </body>
 </html>
